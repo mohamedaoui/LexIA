@@ -45,4 +45,6 @@ def get_llm():
         model=settings.GEMINI_MODEL,
         google_api_key=settings.GEMINI_API_KEY,
         temperature=0.2,
+        # Réflexion courte : réponse ~6 s au lieu de ~45 s, qualité équivalente sur nos tests.
+        thinking_level=settings.GEMINI_THINKING_LEVEL,
     )
