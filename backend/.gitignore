@@ -11,4 +11,5 @@ __pycache__/
 *.egg
 *.zip
 *.pdf
-*.picklechroma_db/
+*.pickle
+chroma_db/
