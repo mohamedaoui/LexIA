@@ -41,10 +41,14 @@ def get_llm():
         raise ImproperlyConfigured("GEMINI_API_KEY n'est pas défini dans backend/.env.")
     from langchain_google_genai import ChatGoogleGenerativeAI
 
-    return ChatGoogleGenerativeAI(
-        model=settings.GEMINI_MODEL,
-        google_api_key=settings.GEMINI_API_KEY,
-        temperature=0.2,
-        # Réflexion courte : réponse ~6 s au lieu de ~45 s, qualité équivalente sur nos tests.
-        thinking_level=settings.GEMINI_THINKING_LEVEL,
-    )
+    def model(name):
+        return ChatGoogleGenerativeAI(
+            model=name,
+            google_api_key=settings.GEMINI_API_KEY,
+            # Réflexion courte : réponse en quelques secondes au lieu de ~45 s sur Flash.
+            thinking_level=settings.GEMINI_THINKING_LEVEL,
+            max_retries=1,
+        )
+
+    # Si le modèle principal échoue (quota atteint, surcharge), les suivants prennent le relais.
+    return model(settings.GEMINI_MODEL).with_fallbacks([model(name) for name in settings.GEMINI_FALLBACK_MODELS])

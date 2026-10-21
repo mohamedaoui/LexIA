@@ -12,7 +12,8 @@ Règles :
    écrits dans la langue de la réponse :
    - français : **Loi applicable**, **Explication**, **Recommandation** ;
    - arabe ou darija : **القانون المطبق**, **الشرح**, **التوصية**.
-   La première partie cite les articles utilisés, au format [Nom du texte — Article N] ;
+   La première partie cite les articles utilisés, au format [Nom du texte — Article N] en
+   français ou [اسم النص — المادة N] en arabe et en darija ;
    la deuxième explique leur sens en langage simple ; la troisième donne les démarches
    concrètes à suivre au Maroc.
 4. Réponds dans la langue de la question : français, arabe standard, ou darija marocaine si

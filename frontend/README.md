@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LexIA — Frontend (React 18 + TypeScript + Tailwind)
 
-## Getting Started
+## Démarrage
 
-First, run the development server:
+Le backend Django doit tourner sur `http://localhost:8000` (voir `backend/README.md`).
 
-```bash
+```powershell
+cd frontend
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Ouvrir http://localhost:5173. En développement, Vite redirige `/api` vers Django : pas de
+configuration CORS à faire.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Commande | Rôle |
+|---|---|
+| `npm run dev` | Serveur de développement |
+| `npm test` | Tests (Vitest) |
+| `npm run typecheck` | Vérification TypeScript |
+| `npm run build` | Build de production dans `dist/` |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Structure
 
-## Learn More
+```
+src/
+├── api/
+│   ├── client.ts      # Axios + jeton JWT, renouvellement automatique sur 401
+│   ├── auth.ts        # Connexion, inscription, profil
+│   ├── chat.ts        # Conversations, articles, feedback, streaming de la réponse
+│   ├── sse.ts         # Lecture du flux Server-Sent Events (+ sse.test.ts)
+│   └── types.ts       # Types des réponses de l'API
+├── components/        # Sidebar, MessageBubble, SourceList, ChatInput, LanguageSwitch...
+├── pages/             # LoginPage, RegisterPage, ChatPage
+├── auth.tsx           # Contexte de session + route protégée
+└── i18n.tsx           # Textes FR / AR et bascule de direction (RTL)
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Fonctionnalités
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Inscription, connexion, déconnexion ; session conservée (jetons JWT dans `localStorage`).
+- Chat avec réponse affichée **mot par mot** (`POST /api/chat/stream/`), bouton « Arrêter ».
+- Historique des conversations, suppression, URL par conversation (`/c/:id`).
+- Sources de chaque réponse : texte de loi, numéro d'article, pertinence, texte complet
+  de l'article à la demande.
+- Feedback 👍 / 👎 sur chaque réponse.
+- Interface en français ou en arabe (mise en page RTL complète) ; chaque message prend
+  automatiquement la direction de sa langue (`dir="auto"`).
+- Questions suggérées sur l'écran d'accueil, affichage mobile avec menu latéral.

@@ -49,10 +49,27 @@ def format_context(sources: list[Source]) -> str:
     )
 
 
-def answer(question: str, history: list[tuple[str, str]] | None = None) -> RagAnswer:
-    """`history` : liste de (rôle, contenu) des messages précédents, du plus ancien au plus récent."""
+@dataclass
+class Prepared:
+    """Tout ce qu'il faut pour appeler le LLM : messages, sources trouvées, langue."""
+
+    llm: object
+    messages: list
+    sources: list[Source]
+    language: str
+
+    @property
+    def disclaimer(self) -> str:
+        return f"\n\n---\n{DISCLAIMERS[self.language]}"
+
+
+def prepare(question: str, history: list[tuple[str, str]] | None = None) -> Prepared:
+    """`history` : liste de (rôle, contenu) des messages précédents, du plus ancien au plus récent.
+
+    Lève ImproperlyConfigured avant toute recherche si le LLM n'est pas configuré."""
     from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
+    llm = get_llm()
     history = history or []
 
     # La question précédente aide à comprendre une relance courte ("et la sanction ?").
@@ -64,11 +81,18 @@ def answer(question: str, history: list[tuple[str, str]] | None = None) -> RagAn
         messages.append(HumanMessage(content) if role == "user" else AIMessage(content))
     messages.append(HumanMessage(CONTEXT_TEMPLATE.format(context=format_context(sources), question=question)))
 
-    text = get_llm().invoke(messages).text
+    return Prepared(llm, messages, sources, detect_language(question))
 
-    language = detect_language(question)
-    return RagAnswer(
-        content=f"{text.strip()}\n\n---\n{DISCLAIMERS[language]}",
-        language=language,
-        sources=sources,
-    )
+
+def answer(question: str, history: list[tuple[str, str]] | None = None) -> RagAnswer:
+    prepared = prepare(question, history)
+    text = prepared.llm.invoke(prepared.messages).text
+    return RagAnswer(text.strip() + prepared.disclaimer, prepared.language, prepared.sources)
+
+
+def stream(prepared: Prepared):
+    """Produit la réponse morceau par morceau ; le dernier morceau est l'avertissement légal."""
+    for chunk in prepared.llm.stream(prepared.messages):
+        if chunk.text:
+            yield chunk.text
+    yield prepared.disclaimer

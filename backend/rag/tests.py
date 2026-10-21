@@ -1,9 +1,10 @@
+import json
 from types import SimpleNamespace
 
 import pytest
 from django.core.exceptions import ImproperlyConfigured
 from langchain_core.documents import Document
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, AIMessageChunk
 
 from chat.models import Conversation, Message, MessageSource
 from conftest import ConversationFactory
@@ -31,6 +32,17 @@ class FakeLLM:
     def invoke(self, messages):
         self.calls.append(messages)
         return AIMessage(self.reply)
+
+    def stream(self, messages):
+        self.calls.append(messages)
+        for word in self.reply.split(" "):
+            yield AIMessageChunk(word + " ")
+
+
+class BrokenLLM(FakeLLM):
+    def stream(self, messages):
+        yield AIMessageChunk("Début ")
+        raise RuntimeError("quota dépassé")
 
 
 @pytest.fixture
@@ -155,3 +167,74 @@ def test_chat_without_api_key_returns_503_and_saves_nothing(auth_api, monkeypatc
     response = auth_api.post("/api/chat/", {"message": "Bonjour"})
     assert response.status_code == 503
     assert not Conversation.objects.exists()
+
+
+# --- Endpoint /api/chat/stream/ ------------------------------------------------
+
+def read_events(response):
+    body = b"".join(response.streaming_content).decode("utf-8")
+    events = []
+    for block in body.strip().split("\n\n"):
+        event, data = block.split("\n")
+        events.append((event.removeprefix("event: "), json.loads(data.removeprefix("data: "))))
+    return events
+
+
+def test_stream_sends_sources_tokens_then_done(auth_api, user, fake_rag):
+    response = auth_api.post("/api/chat/stream/", {"message": "ما هي مدة الإشعار؟"})
+    assert response.status_code == 200
+    assert response["Content-Type"].startswith("text/event-stream")
+
+    events = read_events(response)
+    names = [name for name, _ in events]
+    assert names[0] == "sources" and names[-1] == "done"
+    assert set(names[1:-1]) == {"token"}
+    assert events[0][1][0]["number"] == "2"
+
+    streamed = "".join(data for name, data in events if name == "token")
+    done = events[-1][1]
+    assert done["answer"]["content"] == streamed.strip()
+    assert done["answer"]["content"].endswith(DISCLAIMERS["ar"])
+    assert Conversation.objects.get(id=done["conversation_id"]).messages.count() == 2
+
+
+def test_stream_error_saves_nothing(auth_api, monkeypatch, fake_rag):
+    monkeypatch.setattr(pipeline, "get_llm", lambda: BrokenLLM())
+    events = read_events(auth_api.post("/api/chat/stream/", {"message": "Bonjour"}))
+    assert [name for name, _ in events] == ["sources", "token", "error"]
+    assert not Conversation.objects.exists()
+
+
+def test_stream_without_api_key_returns_503(auth_api, monkeypatch, settings):
+    settings.GEMINI_API_KEY = ""
+    pipeline.get_llm.cache_clear()
+    response = auth_api.post("/api/chat/stream/", {"message": "Bonjour"})
+    assert response.status_code == 503
+    assert "GEMINI_API_KEY" in response.data["detail"]
+
+
+class QuotaLLM(FakeLLM):
+    def stream(self, messages):
+        raise RuntimeError("429 RESOURCE_EXHAUSTED: quota exceeded")
+        yield  # générateur
+
+
+def test_stream_quota_error_has_clear_message(auth_api, monkeypatch, fake_rag):
+    monkeypatch.setattr(pipeline, "get_llm", lambda: QuotaLLM())
+    events = read_events(auth_api.post("/api/chat/stream/", {"message": "Bonjour"}))
+    assert events[-1] == ("error", {"detail": "La limite d'utilisation gratuite de l'IA est atteinte. Réessayez plus tard."})
+
+
+def test_llm_has_fallback_models(settings):
+    from rag.store import get_llm
+
+    settings.GEMINI_API_KEY = "test"
+    settings.GEMINI_MODEL = "principal"
+    settings.GEMINI_FALLBACK_MODELS = ["secours-1", "secours-2"]
+    get_llm.cache_clear()
+    try:
+        llm = get_llm()
+        assert llm.runnable.model.endswith("principal")
+        assert [f.model.split("/")[-1] for f in llm.fallbacks] == ["secours-1", "secours-2"]
+    finally:
+        get_llm.cache_clear()

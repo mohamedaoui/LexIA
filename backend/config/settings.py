@@ -139,7 +139,9 @@ RAG_TOP_K = int(os.environ.get("RAG_TOP_K", "6"))
 RAG_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.0"))
 RAG_HISTORY_MESSAGES = 10
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-3.5-flash-lite")
+# Essayés dans l'ordre si le modèle principal échoue (quota gratuit : ~20 requêtes/jour/modèle sur Flash).
+GEMINI_FALLBACK_MODELS = env_list("GEMINI_FALLBACK_MODELS", "gemini-3.1-flash-lite,gemini-3.5-flash")
 GEMINI_THINKING_LEVEL = os.environ.get("GEMINI_THINKING_LEVEL", "low")
 # Charge le modèle d'embeddings au démarrage du serveur (sinon ~1 à 2 min sur la 1re question).
 RAG_PRELOAD = os.environ.get("RAG_PRELOAD", "True").lower() == "true"
