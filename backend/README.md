@@ -8,7 +8,8 @@ backend/
 ├── accounts/    # Utilisateurs (connexion par email, rôles), inscription, JWT
 ├── legal/       # Catégories, textes de loi, articles, FAQ + commande import_laws
 ├── chat/        # Conversations, messages, sources citées, feedback, endpoint /api/chat/
-├── rag/         # Pipeline RAG : embeddings, ChromaDB, Gemini, commande index_articles
+├── rag/         # Pipeline RAG : embeddings, ChromaDB, Gemini, commandes index_articles et classify_messages
+├── dashboard/   # Statistiques et exports CSV pour les administrateurs
 ├── ingestion/   # Anciens scripts du pipeline (téléchargement des PDF, extraction) — référence
 └── conftest.py  # Fixtures et factories pour pytest
 ```
@@ -54,6 +55,8 @@ Avec Docker (depuis la racine du projet) : `docker compose up --build`.
 | CRUD | `/api/conversations/` | connecté, ses propres conversations |
 | POST | `/api/chat/` `{message, conversation_id?}` | connecté — question → réponse RAG avec articles cités |
 | POST | `/api/messages/{id}/feedback/` | connecté, réponses de ses conversations |
+| GET | `/api/dashboard/stats/?days=7\|30\|90\|all` | administrateur |
+| GET | `/api/dashboard/export/questions.csv`, `/api/dashboard/export/feedback.csv` | administrateur |
 
 Les requêtes authentifiées envoient l'en-tête `Authorization: Bearer <access>`.
 
@@ -93,6 +96,21 @@ historique + articles + prompt système ──► Gemini ──► réponse + av
   par exemple pour « Bonjour »). Aucun appel supplémentaire au LLM.
 - La catégorie est enregistrée sur la question et la réponse (`Message.category`), envoyée
   au frontend (événement `category` du streaming) et servira aux statistiques du dashboard.
+
+## Tableau de bord administrateur
+
+Réservé aux comptes `is_staff` (créer le sien : `python manage.py createsuperuser`, ou cocher
+« Statut équipe » dans l'admin Django). Dans l'interface : lien **Tableau de bord** en bas de la
+barre latérale, ou http://localhost:5173/dashboard.
+
+- Chiffres clés : questions, utilisateurs actifs, satisfaction (👍 / 👎), questions non classées.
+- Questions par jour, par domaine juridique (avec satisfaction par domaine), par langue,
+  profils des inscrits, textes de loi les plus cités, derniers avis négatifs.
+- Filtre de période (7, 30, 90 jours, tout) appliqué à toute la page et aux exports.
+- Exports CSV (séparateur `;`, UTF-8 avec BOM : s'ouvrent directement dans Excel, arabe
+  compris). Les utilisateurs y sont identifiés par leur numéro, sans email.
+- Après une modification de `data/categories.json` : `python manage.py load_categories` puis
+  `python manage.py classify_messages --all` pour reclasser l'historique.
 
 ## Limites connues
 

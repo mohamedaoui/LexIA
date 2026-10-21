@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
-import { RequireAuth } from "./auth";
+import { RequireAdmin, RequireAuth } from "./auth";
 import { ChatPage } from "./pages/ChatPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 
@@ -23,6 +24,14 @@ export function App() {
           <RequireAuth>
             <ChatPage />
           </RequireAuth>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <RequireAdmin>
+            <DashboardPage />
+          </RequireAdmin>
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import type { Conversation } from "../api/types";
 import { useAuth } from "../auth";
 import { useI18n } from "../i18n";
@@ -65,6 +65,17 @@ export function Sidebar({ conversations, onNew, onDelete, onNavigate }: Props) {
       </nav>
 
       <div className="space-y-3 border-t border-slate-200 p-4">
+        {user?.is_staff && (
+          <Link
+            to="/dashboard"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-200/70"
+          >
+            <svg viewBox="0 0 20 20" className="h-4 w-4 text-brand-600" fill="currentColor" aria-hidden>
+              <path d="M3 17V9h3v8H3Zm5.5 0V3h3v14h-3ZM14 17v-5h3v5h-3Z" />
+            </svg>
+            {t.dashboard.link}
+          </Link>
+        )}
         <LanguageSwitch />
         <div className="flex items-center justify-between gap-2">
           <div className="min-w-0">

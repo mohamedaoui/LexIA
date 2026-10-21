@@ -65,3 +65,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   if (!user) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   return <>{children}</>;
 }
+
+/** Réservé aux administrateurs (is_staff) ; les autres sont renvoyés vers le chat. */
+export function RequireAdmin({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+  return <RequireAuth>{user?.is_staff ? children : <Navigate to="/" replace />}</RequireAuth>;
+}

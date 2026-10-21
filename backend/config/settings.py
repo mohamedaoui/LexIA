@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "legal",
     "chat",
     "rag",
+    "dashboard",
 ]
 
 MIDDLEWARE = [

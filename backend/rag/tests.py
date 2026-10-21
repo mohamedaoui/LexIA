@@ -299,3 +299,21 @@ def test_load_categories_from_json(tmp_path):
     assert load_categories(path) == (1, 1)  # relançable sans doublon
     assert LegalDocument.objects.get(source_file="مدونة الشغل.txt").category.slug == "travail"
     assert LegalDocument.objects.get(source_file="autre.txt").category is None
+
+
+@pytest.mark.django_db
+def test_classify_messages_backfills_old_exchanges(user):
+    from django.core.management import call_command
+
+    travail = Category.objects.create(slug="travail", name_fr="Travail")
+    conversation = ConversationFactory(user=user)
+    question = conversation.messages.create(role=Message.Role.USER, content="Salaire impayé")
+    answer = conversation.messages.create(role=Message.Role.ASSISTANT, content="Selon...")
+    MessageSource.objects.create(message=answer, article=make_source(travail, 0.9).article, score=0.9)
+    unrelated = conversation.messages.create(role=Message.Role.ASSISTANT, content="Bonjour")  # sans source
+
+    call_command("classify_messages")
+
+    question.refresh_from_db(); answer.refresh_from_db(); unrelated.refresh_from_db()
+    assert question.category == travail and answer.category == travail
+    assert unrelated.category is None

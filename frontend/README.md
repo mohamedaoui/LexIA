@@ -47,3 +47,5 @@ src/
 - Interface en français ou en arabe (mise en page RTL complète) ; chaque message prend
   automatiquement la direction de sa langue (`dir="auto"`).
 - Questions suggérées sur l'écran d'accueil, affichage mobile avec menu latéral.
+- **Tableau de bord administrateur** (`/dashboard`, comptes `is_staff`) : chiffres clés,
+  graphiques avec info-bulles et vue tableau, avis négatifs, exports CSV.

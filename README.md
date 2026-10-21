@@ -57,7 +57,7 @@ Conception : [docs/conception.md](docs/conception.md).
 - ✅ S4 Pipeline RAG (embeddings locaux + ChromaDB + Gemini), réponses en streaming
 - ✅ Frontend React : connexion, chat, sources, feedback, interface FR / AR (RTL)
 - ✅ S5 Classement automatique des questions en 17 domaines juridiques
-- ⏳ S6 Dashboard admin, statistiques, export CSV
+- ✅ S6 Dashboard administrateur : statistiques, avis, exports CSV
 - ⏳ S7-S8 Tests de charge, audit sécurité, déploiement, rapport
 
 ## Crédits
