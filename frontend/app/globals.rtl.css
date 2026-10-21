@@ -1,0 +1,36 @@
+/* Global RTL support styles */
+.rtl-text {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: embed;
+}
+
+.ltr-text {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: normal;
+}
+
+.rtl-input {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: embed;
+}
+
+.ltr-input {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: normal;
+}
+
+/* Force RTL for Arabic text containers */
+[dir="rtl"] {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: embed;
+}
+
+/* Ensure proper cursor positioning for RTL input */
+textarea.rtl-input {
+  caret-color: auto;
+}

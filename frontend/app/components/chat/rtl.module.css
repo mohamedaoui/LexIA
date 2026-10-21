@@ -1,0 +1,57 @@
+/* RTL text container - for messages */
+.rtlContainer {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+/* LTR text container - for messages */
+.ltrContainer {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* RTL text styling */
+.rtlText {
+  text-align: right;
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+/* LTR text styling */
+.ltrText {
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* RTL input styling */
+.rtlInput {
+  text-align: right;
+  direction: rtl;
+  unicode-bidi: embed;
+}
+
+/* LTR input styling */
+.ltrInput {
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* RTL message bubble alignment */
+.rtlMessageBubble {
+  align-self: flex-end;
+  margin-left: auto;
+}
+
+/* LTR message bubble alignment */
+.ltrMessageBubble {
+  align-self: flex-start;
+  margin-right: auto;
+}

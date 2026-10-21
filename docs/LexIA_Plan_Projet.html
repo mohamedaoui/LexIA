@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>LexIA — Plan du Projet</title>
+<style>
+  @page { size: A4; margin: 22mm 18mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #1f2a2a; font-size: 10.5pt; line-height: 1.4; margin: 0; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; padding-left: 10mm; page-break-after: always; }
+  .cover h1 { font-size: 54pt; margin: 0; letter-spacing: -1px; }
+  .cover .sub { color: #0b6e69; font-size: 18pt; margin-top: 4px; }
+  .cover .meta { color: #5a6670; margin-top: 50px; font-size: 11pt; }
+  h2 { font-size: 15pt; margin: 28px 0 14px; padding-bottom: 6px; border-bottom: 1px solid #d5ebe9; display: flex; align-items: center; gap: 12px; page-break-after: avoid; }
+  h2 .n { background: #0b6e69; color: #fff; font-size: 10pt; padding: 4px 8px; }
+  h3 { color: #0b6e69; font-size: 11.5pt; margin: 18px 0 6px; page-break-after: avoid; }
+  p.lead { color: #4a5660; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; font-size: 9.5pt; page-break-inside: avoid; }
+  th { background: #e6f3f1; color: #0b6e69; text-align: left; padding: 7px 9px; border-top: 2px solid #0b6e69; border-bottom: 2px solid #0b6e69; }
+  td { padding: 6px 9px; border-bottom: 1px solid #d5ebe9; vertical-align: top; }
+  tr:nth-child(even) td { background: #f6f9f9; }
+  ul { margin: 4px 0 10px; padding-left: 20px; }
+  .sprint { page-break-inside: avoid; margin-bottom: 14px; }
+  .sprint .tag { display: inline-block; background: #0b6e69; color: #fff; padding: 6px 12px; font-size: 11pt; }
+  .sprint table { margin: 0; }
+  .jalon { display: inline-block; border-left: 3px solid #0b6e69; background: #eef7f6; color: #0b6e69; font-weight: bold; padding: 5px 12px; font-size: 9.5pt; margin-top: 4px; }
+  .gantt td { text-align: center; padding: 0; height: 22px; }
+  .gantt td:first-child { text-align: left; padding: 4px 9px; }
+  .gantt .on { background: #0b6e69 !important; }
+  .gantt .cont { background: #e2f1ef !important; }
+  .closing { border-left: 3px solid #0b6e69; background: #eef7f6; padding: 10px 14px; font-style: italic; }
+  .break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <h1>LexIA</h1>
+  <div class="sub">Plan du Projet</div>
+  <div class="meta">Juin 2026 &nbsp;·&nbsp; Mohamed Aouijil</div>
+</section>
+
+<table>
+  <tr><th>Champ</th><th>Détail</th></tr>
+  <tr><td>Document</td><td>Plan du Projet — Version 1.1</td></tr>
+  <tr><td>Date</td><td>Juin 2026</td></tr>
+  <tr><td>Durée totale</td><td>8 semaines (2 mois)</td></tr>
+  <tr><td>Réalisateur</td><td>Mohamed Aouijil (projet individuel)</td></tr>
+  <tr><td>Méthodologie</td><td>Scrum simplifié — sprints hebdomadaires</td></tr>
+</table>
+
+<h2><span class="n">1</span>Objectif du document</h2>
+<p class="lead">Ce plan définit l'organisation, le calendrier, les tâches, les jalons, les ressources et les risques identifiés pour le développement de LexIA. Il sert de référence tout au long des 8 semaines de développement.</p>
+<h3>Documents de référence</h3>
+<table>
+  <tr><th>Document</th><th>Référence</th><th>Statut</th></tr>
+  <tr><td>Cahier des charges fonctionnel et technique</td><td>LexIA_CDC_Django.pdf</td><td>Validé</td></tr>
+  <tr><td>Plan du projet (ce document)</td><td>LexIA_Plan_Projet_v1.1.pdf</td><td>En cours</td></tr>
+  <tr><td>Maquettes UI / Wireframes</td><td>LexIA_Maquettes (Figma)</td><td>À produire</td></tr>
+  <tr><td>Documentation technique API</td><td>LexIA_API_Docs (DRF Swagger)</td><td>À produire</td></tr>
+</table>
+
+<h2><span class="n">2</span>Réalisateur et rôles</h2>
+<table>
+  <tr><th>Membre</th><th>Rôle</th><th>Responsabilités</th><th>Disponibilité</th></tr>
+  <tr><td>Mohamed Aouijil</td><td>Développeur Full-Stack &amp; IA (seul réalisateur)</td><td>Backend : architecture Django · Modèles · API DRF · PostgreSQL · Tests backend<br>IA &amp; Données : corpus juridique · Pipeline RAG LangChain · Base vectorielle<br>Frontend : interface React · TailwindCSS · Intégration API · UX/UI · Maquettes Figma · Tests frontend</td><td>Temps plein — 8 sem.</td></tr>
+</table>
+<h3>Organisation du travail en solo</h3>
+<ul>
+  <li>Chaque sprint traite d'abord le backend, puis le frontend qui le consomme, afin d'éviter les blocages.</li>
+  <li>Auto-revue de code via Pull Requests GitHub avant chaque fusion sur la branche principale.</li>
+  <li>Documentation technique et rapport final rédigés au fil des sprints.</li>
+  <li>Bilan hebdomadaire écrit (30 min) : avancement, blocages, objectifs du sprint suivant.</li>
+</ul>
+
+<h2 class="break"><span class="n">3</span>Méthodologie de travail</h2>
+<p class="lead">Le projet suit une approche itérative inspirée de Scrum, adaptée à un développeur seul. Huit sprints d'une semaine, chacun avec un objectif clair et des livrables définis.</p>
+<table>
+  <tr><th>Pratique</th><th>Application dans LexIA</th></tr>
+  <tr><td>Sprint hebdomadaire</td><td>1 semaine = 1 sprint avec objectif et livrable définis</td></tr>
+  <tr><td>Point quotidien</td><td>10 min chaque matin : tâches du jour et blocages</td></tr>
+  <tr><td>Definition of Done</td><td>Code versionné sur GitHub + tests passants + fonctionnalité démontrée</td></tr>
+  <tr><td>Backlog de tâches</td><td>GitHub Issues / GitHub Projects avec priorités</td></tr>
+  <tr><td>Revue de sprint</td><td>Démonstration de la fonctionnalité en fin de semaine</td></tr>
+  <tr><td>Rétrospective</td><td>Bilan 15 min : ce qui a fonctionné / ce qu'on améliore</td></tr>
+</table>
+<h3>Outils de gestion</h3>
+<table>
+  <tr><th>Outil</th><th>Usage</th><th>Justification</th></tr>
+  <tr><td>GitHub</td><td>Versionnage · Issues · Pull Requests</td><td>Standard industrie, historique complet</td></tr>
+  <tr><td>GitHub Projects</td><td>Backlog · Kanban · Suivi des tâches</td><td>Visualisation rapide de l'avancement</td></tr>
+  <tr><td>Figma</td><td>Maquettes UI · Wireframes · Design System</td><td>Conception visuelle avant développement</td></tr>
+  <tr><td>Postman</td><td>Test des endpoints API DRF</td><td>Validation des appels REST avant intégration frontend</td></tr>
+  <tr><td>VS Code</td><td>IDE principal (Django, React, Docker)</td><td>Environnement unique et configuré</td></tr>
+</table>
+
+<h2 class="break"><span class="n">4</span>Planning détaillé par sprint</h2>
+<p class="lead">Organisation du dépôt : <b>backend/</b> (Django, API, pipeline IA) · <b>frontend/</b> (interface web) · <b>data/</b> (corpus juridique).</p>
+
+<div class="sprint"><span class="tag"><b>S1</b> — Analyse &amp; Conception</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› CDC · Architecture · Schéma BDD · ERD</td><td>› Wireframes Figma · Maquettes UI · Design System</td><td>✓ Cahier des charges finalisé<br>✓ Schéma ERD PostgreSQL<br>✓ Maquettes Figma validées<br>✓ Architecture technique documentée</td></tr></table>
+<span class="jalon">Jalon 1 : Conception validée</span></div>
+
+<div class="sprint"><span class="tag"><b>S2</b> — Infrastructure &amp; Setup</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Projet Django init · PostgreSQL · Docker Compose · CI GitHub</td><td>› Projet React init · TailwindCSS · Structure composants · Routing</td><td>✓ Environnement Docker opérationnel<br>✓ Projet Django configuré<br>✓ Projet React configuré<br>✓ Pipeline CI GitHub Actions</td></tr></table>
+<span class="jalon">Jalon 2 : Infrastructure prête</span></div>
+
+<div class="sprint"><span class="tag"><b>S3</b> — Backend Core — Modèles &amp; API</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Modèles Django · Migrations · Django Admin · Serializers DRF</td><td>› Composants chat UI · Layout principal · Axios config · Auth UI</td><td>✓ Modèles BDD migrés<br>✓ API CRUD fonctionnelle<br>✓ Django Admin configuré<br>✓ Composants React de base</td></tr></table></div>
+
+<div class="sprint"><span class="tag"><b>S4</b> — Pipeline IA &amp; Chatbot</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› LangChain · Chroma DB · Pipeline RAG · Vue Django /chat</td><td>› Interface chat complète · WebSocket ou polling · Affichage messages</td><td>✓ Pipeline RAG fonctionnel<br>✓ Endpoint /api/chat/ opérationnel<br>✓ Interface chat connectée au backend</td></tr></table>
+<span class="jalon">Jalon 3 : Chatbot de base fonctionnel</span></div>
+
+<div class="sprint"><span class="tag"><b>S5</b> — Fonctionnalités avancées</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Détection de catégorie · Support multilingue · Avertissements légaux</td><td>› Sélecteur de langue · Affichage RTL arabe · Suggestions de questions</td><td>✓ Classification automatique des questions<br>✓ Support FR/AR/Darija<br>✓ Avertissement légal affiché</td></tr></table></div>
+
+<div class="sprint"><span class="tag"><b>S6</b> — Historique · Feedback · Admin Dashboard</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Modèle Feedback · API historique · Statistiques admin · Export CSV</td><td>› Page historique · Composant feedback · Dashboard admin · Graphiques</td><td>✓ Système de feedback opérationnel<br>✓ Historique des conversations<br>✓ Dashboard administrateur</td></tr></table>
+<span class="jalon">Jalon 4 : Application complète (v1)</span></div>
+
+<div class="sprint"><span class="tag"><b>S7</b> — Tests · Sécurité · Optimisation</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Tests unitaires Pytest-Django · Audit sécurité JWT · Tests de charge</td><td>› Tests Vitest · Tests d'intégration · Accessibilité WCAG · Responsive fix</td><td>✓ Rapport de tests (couverture &gt; 70%)<br>✓ Audit sécurité réalisé<br>✓ Bugs critiques corrigés</td></tr></table>
+<span class="jalon">Jalon 5 : Tests validés</span></div>
+
+<div class="sprint"><span class="tag"><b>S8</b> — Finalisation &amp; Livraison</span>
+<table><tr><th>Backend &amp; IA</th><th>Frontend</th><th>Livrables du sprint</th></tr>
+<tr><td>› Documentation API Swagger · README technique · Déploiement staging</td><td>› Rapport final · Slides présentation · Démo préparée</td><td>✓ Application déployée (Docker staging)<br>✓ Documentation complète<br>✓ Rapport final<br>✓ Présentation slides<br>✓ Démonstration live</td></tr></table>
+<span class="jalon">Jalon 6 : Livraison finale</span></div>
+
+<h2 class="break"><span class="n">5</span>Diagramme de Gantt</h2>
+<table class="gantt">
+  <tr><th>Phase / Activité</th><th>S1</th><th>S2</th><th>S3</th><th>S4</th><th>S5</th><th>S6</th><th>S7</th><th>S8</th></tr>
+  <tr><td>Analyse &amp; Conception</td><td class="on"></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Infrastructure &amp; Setup</td><td></td><td class="on"></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Backend Core</td><td></td><td></td><td class="on"></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Pipeline IA &amp; Chatbot</td><td></td><td></td><td></td><td class="on"></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Fonctionnalités avancées</td><td></td><td></td><td></td><td></td><td class="on"></td><td></td><td></td><td></td></tr>
+  <tr><td>Feedback · Historique</td><td></td><td></td><td></td><td></td><td></td><td class="on"></td><td></td><td></td></tr>
+  <tr><td>Tests &amp; Sécurité</td><td></td><td></td><td></td><td></td><td></td><td></td><td class="on"></td><td></td></tr>
+  <tr><td>Finalisation &amp; Livraison</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td class="on"></td></tr>
+  <tr><td>Documentation (continu)</td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td></tr>
+  <tr><td>Versionnage GitHub</td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td><td class="cont"></td></tr>
+</table>
+
+<h2><span class="n">6</span>Jalons et points de contrôle</h2>
+<table>
+  <tr><th>Jalon</th><th>Sprint</th><th>Critère de validation</th><th>Livrable</th><th>Statut</th></tr>
+  <tr><td>J1</td><td>S1</td><td>CDC finalisé, architecture validée, maquettes approuvées</td><td>CDC v1.1 · ERD · Maquettes Figma</td><td>À faire</td></tr>
+  <tr><td>J2</td><td>S2</td><td>Environnements backend et frontend opérationnels, Docker fonctionnel</td><td>Docker Compose · Projets initialisés</td><td>À faire</td></tr>
+  <tr><td>J3</td><td>S4</td><td>Chatbot répond via pipeline RAG, API /chat/ testée avec Postman</td><td>Pipeline RAG · Endpoint /api/chat/</td><td>À faire</td></tr>
+  <tr><td>J4</td><td>S6</td><td>Application v1 complète : chat + multilingue + feedback + admin</td><td>Application v1 · Dashboard admin</td><td>À faire</td></tr>
+  <tr><td>J5</td><td>S7</td><td>Couverture de tests &gt; 70%, audit sécurité validé, 0 bug critique</td><td>Rapport de tests · Audit sécurité</td><td>À faire</td></tr>
+  <tr><td>J6</td><td>S8</td><td>Application déployée, documentation complète, démo prête</td><td>Docker staging · Rapport · Slides</td><td>À faire</td></tr>
+</table>
+
+<h2 class="break"><span class="n">7</span>Ressources techniques</h2>
+<table>
+  <tr><th>Composant</th><th>Package / Outil</th><th>Version</th><th>Rôle</th></tr>
+  <tr><td>Backend</td><td>Django</td><td>5.2</td><td>Framework web principal</td></tr>
+  <tr><td>Backend</td><td>djangorestframework</td><td>3.16</td><td>API REST — Serializers · ViewSets · Routers</td></tr>
+  <tr><td>Backend</td><td>djangorestframework-simplejwt</td><td>5.5</td><td>Authentification JWT</td></tr>
+  <tr><td>Backend</td><td>django-cors-headers</td><td>4.9</td><td>Gestion des CORS pour React</td></tr>
+  <tr><td>Base de données</td><td>psycopg2-binary</td><td>2.9</td><td>Adaptateur PostgreSQL pour Django</td></tr>
+  <tr><td>IA</td><td>langchain</td><td>1.3</td><td>Orchestration du pipeline RAG</td></tr>
+  <tr><td>IA</td><td>langchain-openai</td><td>latest</td><td>Intégration LLM GPT-4 / GPT-3.5</td></tr>
+  <tr><td>IA</td><td>chromadb</td><td>1.5</td><td>Base vectorielle pour les embeddings</td></tr>
+  <tr><td>IA</td><td>sentence-transformers</td><td>latest</td><td>Génération d'embeddings locaux (fallback)</td></tr>
+  <tr><td>Frontend</td><td>react</td><td>18</td><td>Framework UI</td></tr>
+  <tr><td>Frontend</td><td>typescript</td><td>5</td><td>Typage statique</td></tr>
+  <tr><td>Frontend</td><td>tailwindcss</td><td>3</td><td>Design utilitaire CSS</td></tr>
+  <tr><td>Frontend</td><td>axios</td><td>1.18</td><td>Appels HTTP vers l'API DRF</td></tr>
+  <tr><td>Tests</td><td>pytest-django</td><td>4.11</td><td>Tests unitaires backend</td></tr>
+  <tr><td>Tests</td><td>factory-boy</td><td>3.3</td><td>Fixtures et données de test</td></tr>
+  <tr><td>DevOps</td><td>docker</td><td>26</td><td>Conteneurisation</td></tr>
+  <tr><td>DevOps</td><td>docker-compose</td><td>2</td><td>Orchestration multi-services</td></tr>
+</table>
+
+<h2><span class="n">8</span>Analyse des risques</h2>
+<table>
+  <tr><th>Risque</th><th>Prob.</th><th>Impact</th><th>Plan de mitigation</th></tr>
+  <tr><td>R1 — Intégration LangChain complexe / coût API LLM</td><td>Moyenne</td><td>Élevé</td><td>Fallback Mistral ou llama.cpp local · Prévoir budget API · Tester dès S4</td></tr>
+  <tr><td>R2 — Retard sur une fonctionnalité critique</td><td>Moyenne</td><td>Élevé</td><td>Priorisation MoSCoW · Réduire la portée d'une feature non critique plutôt que bloquer le jalon</td></tr>
+  <tr><td>R3 — Base de connaissances juridique insuffisante</td><td>Haute</td><td>Élevé</td><td>Alimenter la BDD dès S3 · Prévalider le contenu · Fallback par mots-clés</td></tr>
+  <tr><td>R4 — Difficultés NLP sur la Darija</td><td>Haute</td><td>Moyen</td><td>LLM multilingue (GPT-4 ou Mistral) · Limiter la Darija à la v2 si nécessaire</td></tr>
+  <tr><td>R5 — Charge de travail élevée (réalisateur unique)</td><td>Moyenne</td><td>Élevé</td><td>Backlog priorisé · Réutilisation de composants existants · Automatisation (CI, Docker) pour gagner du temps</td></tr>
+  <tr><td>R6 — Perte ou corruption de la base de données</td><td>Faible</td><td>Élevé</td><td>Sauvegardes PostgreSQL automatiques · Docker volumes persistants · Migrations versionnées</td></tr>
+  <tr><td>R7 — Manque de temps en fin de projet</td><td>Moyenne</td><td>Moyen</td><td>Buffer de 2 jours en S8 · Livrer une version réduite mais fonctionnelle</td></tr>
+  <tr><td>R8 — Failles de sécurité (injection, XSS)</td><td>Faible</td><td>Élevé</td><td>Protection native Django (CSRF/XSS) · DRF validation · Audit sécurité en S7</td></tr>
+</table>
+
+<h2 class="break"><span class="n">9</span>Tableau des livrables</h2>
+<table>
+  <tr><th></th><th>Livrable</th><th>Format</th><th>Responsable</th><th>Sprint</th></tr>
+  <tr><td>L1</td><td>Cahier des charges v1.1</td><td>DOCX / PDF</td><td>M. Aouijil</td><td>S1</td></tr>
+  <tr><td>L2</td><td>Schéma ERD de la base de données</td><td>PDF / PNG</td><td>M. Aouijil</td><td>S1</td></tr>
+  <tr><td>L3</td><td>Maquettes UI et wireframes</td><td>Figma / PDF</td><td>M. Aouijil</td><td>S1</td></tr>
+  <tr><td>L4</td><td>Environnement Docker Compose</td><td>docker-compose.yml</td><td>M. Aouijil</td><td>S2</td></tr>
+  <tr><td>L5</td><td>Projet Django initialisé</td><td>GitHub Repository</td><td>M. Aouijil</td><td>S2</td></tr>
+  <tr><td>L6</td><td>Projet React + TailwindCSS initialisé</td><td>GitHub Repository</td><td>M. Aouijil</td><td>S2</td></tr>
+  <tr><td>L7</td><td>Modèles Django + migrations PostgreSQL</td><td>Code Python</td><td>M. Aouijil</td><td>S3</td></tr>
+  <tr><td>L8</td><td>API CRUD Django REST Framework</td><td>Endpoints DRF</td><td>M. Aouijil</td><td>S3</td></tr>
+  <tr><td>L9</td><td>Interface React — composants de base</td><td>TypeScript/JSX</td><td>M. Aouijil</td><td>S3</td></tr>
+  <tr><td>L10</td><td>Pipeline RAG LangChain + Chroma DB</td><td>Module Python</td><td>M. Aouijil</td><td>S4</td></tr>
+  <tr><td>L11</td><td>Interface chatbot connectée au backend</td><td>React + Axios</td><td>M. Aouijil</td><td>S4</td></tr>
+  <tr><td>L12</td><td>Support multilingue FR/AR/Darija</td><td>Frontend + Backend</td><td>M. Aouijil</td><td>S5</td></tr>
+  <tr><td>L13</td><td>Système de feedback utilisateur</td><td>API + Interface</td><td>M. Aouijil</td><td>S6</td></tr>
+  <tr><td>L14</td><td>Dashboard administrateur</td><td>Django Admin + React</td><td>M. Aouijil</td><td>S6</td></tr>
+  <tr><td>L15</td><td>Rapport de tests (couverture &gt; 70%)</td><td>PDF / HTML</td><td>M. Aouijil</td><td>S7</td></tr>
+  <tr><td>L16</td><td>Audit sécurité (JWT, CSRF, XSS)</td><td>Document PDF</td><td>M. Aouijil</td><td>S7</td></tr>
+  <tr><td>L17</td><td>Application déployée (Docker staging)</td><td>URL + Docker</td><td>M. Aouijil</td><td>S8</td></tr>
+  <tr><td>L18</td><td>Documentation API (DRF Swagger)</td><td>URL / PDF</td><td>M. Aouijil</td><td>S8</td></tr>
+  <tr><td>L19</td><td>Rapport technique final</td><td>PDF</td><td>M. Aouijil</td><td>S8</td></tr>
+  <tr><td>L20</td><td>Présentation slides</td><td>PDF / PPTX</td><td>M. Aouijil</td><td>S8</td></tr>
+  <tr><td>L21</td><td>Démonstration live</td><td>Session présentielle</td><td>M. Aouijil</td><td>S8</td></tr>
+</table>
+
+<h2 class="break"><span class="n">10</span>Critères de réussite</h2>
+<table>
+  <tr><th>Critère</th><th>Indicateur mesurable</th><th>Priorité</th></tr>
+  <tr><td>CR1 — Application accessible via navigateur</td><td>HTTP 200 sur la page d'accueil</td><td>Haute</td></tr>
+  <tr><td>CR2 — Réponses pertinentes aux questions</td><td>Taux de pertinence &gt; 80% sur 20 questions de test</td><td>Haute</td></tr>
+  <tr><td>CR3 — Pipeline RAG sans hallucination majeure</td><td>0 hallucination majeure sur les questions testées</td><td>Haute</td></tr>
+  <tr><td>CR4 — Support FR, arabe et darija</td><td>Test dans les 3 langues avec affichage RTL correct</td><td>Haute</td></tr>
+  <tr><td>CR5 — Avertissement légal affiché</td><td>Présent dans 100% des réponses testées</td><td>Haute</td></tr>
+  <tr><td>CR6 — CRUD administrateur fonctionnel</td><td>CRUD fonctionnel sur catégories, Q&amp;R et utilisateurs</td><td>Haute</td></tr>
+  <tr><td>CR7 — Couverture de tests &gt; 70%</td><td>Rapport pytest-cov &gt; 70%</td><td>Moyenne</td></tr>
+  <tr><td>CR8 — Temps de réponse API &lt; 3 secondes</td><td>Mesuré avec Postman sur 10 requêtes consécutives</td><td>Moyenne</td></tr>
+  <tr><td>CR9 — Déploiement Docker en une commande</td><td>docker-compose up sans erreur</td><td>Haute</td></tr>
+  <tr><td>CR10 — Documentation complète</td><td>README · Swagger · Rapport final présents et cohérents</td><td>Moyenne</td></tr>
+</table>
+
+<h2><span class="n">11</span>Conclusion</h2>
+<p class="lead">Ce plan couvre 8 sprints, 6 jalons et 21 livrables, tous réalisés par Mohamed Aouijil. Le dépôt est séparé en trois parties — backend (API et IA), frontend (interface) et data (corpus juridique) — ce qui permet d'avancer couche par couche et de garder un rythme de livraison régulier.</p>
+<p class="lead">Les 8 risques identifiés ont chacun un plan de mitigation concret, y compris la charge de travail propre à un projet individuel. Les critères de réussite sont mesurables et couvrent les dimensions fonctionnelles, techniques et qualitatives du projet.</p>
+<p class="lead">La stack Django 5 + DRF + React 18 + PostgreSQL + LangChain + Docker reste la colonne vertébrale technique, cohérente avec le cahier des charges v1.1.</p>
+<p class="closing">LexIA — Plan du Projet · Mohamed Aouijil · 8 Sprints · 6 Jalons · 21 Livrables · 8 Risques · Django 5 · DRF · React 18 · PostgreSQL · LangChain · Docker</p>
+
+</body>
+</html>
