@@ -12,6 +12,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from legal.serializers import CategorySerializer
 from rag import pipeline
 
 from .models import Conversation, Feedback, Message, MessageSource
@@ -38,7 +39,7 @@ class ConversationViewSet(viewsets.ModelViewSet):
             qs = qs.prefetch_related(
                 Prefetch(
                     "messages",
-                    queryset=Message.objects.select_related("feedback").prefetch_related(
+                    queryset=Message.objects.select_related("feedback", "category").prefetch_related(
                         Prefetch(
                             "messagesource_set",
                             queryset=MessageSource.objects.select_related("article__document"),
@@ -86,20 +87,25 @@ def failure_message(error: Exception) -> str:
     return QUOTA_EXCEEDED if "RESOURCE_EXHAUSTED" in str(error) else UNAVAILABLE
 
 
-def save_exchange(user, conversation, question, content, sources, language):
+def save_exchange(user, conversation, question, content, sources, language, category=None):
     """Enregistre la question et la réponse ensemble : pas de question orpheline en cas d'erreur.
-    Retourne (conversation, message utilisateur, réponse avec ses sources)."""
+    Les deux messages reçoivent la catégorie détectée. Retourne (conversation, message
+    utilisateur, réponse avec ses sources)."""
     with transaction.atomic():
         if conversation is None:
             conversation = Conversation.objects.create(user=user, title=question[:80], language=language)
-        user_message = conversation.messages.create(role=Message.Role.USER, content=question)
-        answer = conversation.messages.create(role=Message.Role.ASSISTANT, content=content)
+        user_message = conversation.messages.create(role=Message.Role.USER, content=question, category=category)
+        answer = conversation.messages.create(role=Message.Role.ASSISTANT, content=content, category=category)
         MessageSource.objects.bulk_create(
             MessageSource(message=answer, article=s.article, score=s.score) for s in sources
         )
         conversation.save(update_fields=["updated_at"])
 
-    answer = Message.objects.prefetch_related("messagesource_set__article__document").get(pk=answer.pk)
+    answer = (
+        Message.objects.select_related("category")
+        .prefetch_related("messagesource_set__article__document")
+        .get(pk=answer.pk)
+    )
     return conversation, user_message, answer
 
 
@@ -138,7 +144,9 @@ class ChatView(BaseChatView):
             logger.exception("Échec du pipeline RAG")
             return Response({"detail": failure_message(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        saved = save_exchange(request.user, conversation, question, result.content, result.sources, result.language)
+        saved = save_exchange(
+            request.user, conversation, question, result.content, result.sources, result.language, result.category
+        )
         return Response(exchange_payload(*saved), status=status.HTTP_201_CREATED)
 
 
@@ -149,8 +157,9 @@ def sse(event: str, data) -> str:
 class ChatStreamView(BaseChatView):
     """Comme /api/chat/, mais la réponse arrive mot par mot (Server-Sent Events).
 
-    Événements : `sources` (articles trouvés), `token` (morceau de texte), puis `done`
-    (messages enregistrés, même format que /api/chat/) ou `error`."""
+    Événements : `sources` (articles trouvés), `category` (catégorie détectée ou null),
+    `token` (morceau de texte), puis `done` (messages enregistrés, même format que /api/chat/)
+    ou `error`."""
 
     @extend_schema(request=ChatRequestSerializer, responses={(200, "text/event-stream"): str})
     def post(self, request):
@@ -176,6 +185,8 @@ class ChatStreamView(BaseChatView):
                 }
                 for s in prepared.sources
             ])
+            category = prepared.category
+            yield sse("category", CategorySerializer(category).data if category else None)
             parts = []
             try:
                 for text in pipeline.stream(prepared):
@@ -186,7 +197,9 @@ class ChatStreamView(BaseChatView):
                 yield sse("error", {"detail": failure_message(error)})
                 return
             content = "".join(parts).strip()
-            saved = save_exchange(user, conversation, question, content, prepared.sources, prepared.language)
+            saved = save_exchange(
+                user, conversation, question, content, prepared.sources, prepared.language, prepared.category
+            )
             yield sse("done", exchange_payload(*saved))
 
         response = StreamingHttpResponse(events(), content_type="text/event-stream; charset=utf-8")

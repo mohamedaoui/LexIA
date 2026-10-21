@@ -1,10 +1,11 @@
 """Pipeline RAG : recherche des articles pertinents puis génération de la réponse."""
 
+from collections import defaultdict
 from dataclasses import dataclass
 
 from django.conf import settings
 
-from legal.models import LegalArticle
+from legal.models import Category, LegalArticle
 
 from .prompts import CONTEXT_TEMPLATE, DISCLAIMERS, NO_CONTEXT, SYSTEM_PROMPT, detect_language
 from .store import get_llm, get_vectorstore
@@ -21,6 +22,7 @@ class RagAnswer:
     content: str
     language: str
     sources: list[Source]
+    category: Category | None = None
 
 
 def retrieve(query: str, k: int | None = None) -> list[Source]:
@@ -35,8 +37,30 @@ def retrieve(query: str, k: int | None = None) -> list[Source]:
             best[article_id] = score
 
     top = sorted(best.items(), key=lambda item: item[1], reverse=True)[:k]
-    articles = LegalArticle.objects.select_related("document").in_bulk([a for a, _ in top])
+    articles = LegalArticle.objects.select_related("document__category").in_bulk([a for a, _ in top])
     return [Source(articles[a], round(s, 4)) for a, s in top if a in articles]
+
+
+# Part minimale du score total pour qu'une catégorie soit retenue (sinon : question hors domaine
+# ou à cheval sur plusieurs domaines, on ne classe pas).
+CATEGORY_MIN_SHARE = 0.4
+
+
+def detect_category(sources: list[Source]) -> Category | None:
+    """Catégorie de la question : celle qui pèse le plus parmi les articles trouvés,
+    chaque article comptant pour son score de pertinence."""
+    weights: dict[int, float] = defaultdict(float)
+    categories: dict[int, Category] = {}
+    for s in sources:
+        category = s.article.document.category
+        if category is not None:
+            weights[category.id] += s.score
+            categories[category.id] = category
+    total = sum(s.score for s in sources)
+    if not weights or total <= 0:
+        return None
+    best = max(weights, key=weights.get)
+    return categories[best] if weights[best] / total >= CATEGORY_MIN_SHARE else None
 
 
 def format_context(sources: list[Source]) -> str:
@@ -57,6 +81,7 @@ class Prepared:
     messages: list
     sources: list[Source]
     language: str
+    category: Category | None = None
 
     @property
     def disclaimer(self) -> str:
@@ -81,13 +106,13 @@ def prepare(question: str, history: list[tuple[str, str]] | None = None) -> Prep
         messages.append(HumanMessage(content) if role == "user" else AIMessage(content))
     messages.append(HumanMessage(CONTEXT_TEMPLATE.format(context=format_context(sources), question=question)))
 
-    return Prepared(llm, messages, sources, detect_language(question))
+    return Prepared(llm, messages, sources, detect_language(question), detect_category(sources))
 
 
 def answer(question: str, history: list[tuple[str, str]] | None = None) -> RagAnswer:
     prepared = prepare(question, history)
     text = prepared.llm.invoke(prepared.messages).text
-    return RagAnswer(text.strip() + prepared.disclaimer, prepared.language, prepared.sources)
+    return RagAnswer(text.strip() + prepared.disclaimer, prepared.language, prepared.sources, prepared.category)
 
 
 def stream(prepared: Prepared):

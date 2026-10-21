@@ -1,6 +1,6 @@
 import { api, refreshAccessToken, tokens } from "./client";
 import { createSseParser } from "./sse";
-import type { Article, ChatExchange, Conversation, ConversationDetail, Paginated, Source } from "./types";
+import type { Article, Category, ChatExchange, Conversation, ConversationDetail, Paginated, Source } from "./types";
 
 export async function listConversations(): Promise<Conversation[]> {
   const { data } = await api.get<Paginated<Conversation>>("/conversations/");
@@ -27,6 +27,7 @@ export async function sendFeedback(messageId: string, rating: 1 | -1, comment = 
 
 export interface StreamHandlers {
   onSources: (sources: Source[]) => void;
+  onCategory: (category: Category | null) => void;
   onToken: (text: string) => void;
   onDone: (exchange: ChatExchange) => void;
 }
@@ -63,6 +64,7 @@ export async function streamChat(
   let failure: string | null = null;
   const parse = createSseParser(({ event, data }) => {
     if (event === "sources") handlers.onSources(data as Source[]);
+    else if (event === "category") handlers.onCategory(data as Category | null);
     else if (event === "token") handlers.onToken(data as string);
     else if (event === "done") handlers.onDone(data as ChatExchange);
     else if (event === "error") failure = (data as { detail: string }).detail;

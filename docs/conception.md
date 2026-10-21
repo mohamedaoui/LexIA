@@ -25,6 +25,12 @@ flowchart LR
 | Génération | LangChain + LLM | `backend/rag/` |
 | Corpus | Textes de loi (arabe) | `data/` |
 
+### Classement par domaine juridique
+
+Chaque loi appartient à l'un des 17 domaines définis dans `data/categories.json`. La
+catégorie d'une question est déduite des articles retrouvés : somme des scores de
+pertinence par domaine, domaine majoritaire retenu s'il pèse au moins 40 % du total.
+
 ### Flux d'une question
 
 1. L'utilisateur envoie une question (FR, AR ou Darija) à `POST /api/chat/`.

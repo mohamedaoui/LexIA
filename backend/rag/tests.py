@@ -8,7 +8,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 
 from chat.models import Conversation, Message, MessageSource
 from conftest import ConversationFactory
-from legal.models import LegalArticle, LegalDocument
+from legal.models import Category, LegalArticle, LegalDocument
 from rag import pipeline
 from rag.chunking import split_for_embedding
 from rag.prompts import DISCLAIMERS, detect_language
@@ -47,7 +47,8 @@ class BrokenLLM(FakeLLM):
 
 @pytest.fixture
 def articles(db):
-    document = LegalDocument.objects.create(title="مدونة الشغل", source_file="travail.txt")
+    travail = Category.objects.create(slug="travail", name_fr="Travail", name_ar="الشغل")
+    document = LegalDocument.objects.create(title="مدونة الشغل", source_file="travail.txt", category=travail)
     return [
         LegalArticle.objects.create(document=document, position=i, number=str(i), content=f"نص المادة {i}")
         for i in (1, 2, 3)
@@ -187,9 +188,10 @@ def test_stream_sends_sources_tokens_then_done(auth_api, user, fake_rag):
 
     events = read_events(response)
     names = [name for name, _ in events]
-    assert names[0] == "sources" and names[-1] == "done"
-    assert set(names[1:-1]) == {"token"}
+    assert names[:2] == ["sources", "category"] and names[-1] == "done"
+    assert set(names[2:-1]) == {"token"}
     assert events[0][1][0]["number"] == "2"
+    assert events[1][1]["slug"] == "travail"
 
     streamed = "".join(data for name, data in events if name == "token")
     done = events[-1][1]
@@ -201,7 +203,7 @@ def test_stream_sends_sources_tokens_then_done(auth_api, user, fake_rag):
 def test_stream_error_saves_nothing(auth_api, monkeypatch, fake_rag):
     monkeypatch.setattr(pipeline, "get_llm", lambda: BrokenLLM())
     events = read_events(auth_api.post("/api/chat/stream/", {"message": "Bonjour"}))
-    assert [name for name, _ in events] == ["sources", "token", "error"]
+    assert [name for name, _ in events] == ["sources", "category", "token", "error"]
     assert not Conversation.objects.exists()
 
 
@@ -238,3 +240,62 @@ def test_llm_has_fallback_models(settings):
         assert [f.model.split("/")[-1] for f in llm.fallbacks] == ["secours-1", "secours-2"]
     finally:
         get_llm.cache_clear()
+
+
+# --- Catégorie de la question ----------------------------------------------------
+
+def make_source(category, score):
+    document = LegalDocument.objects.create(
+        title=f"loi {LegalDocument.objects.count()}", source_file=f"{LegalDocument.objects.count()}.txt", category=category
+    )
+    article = LegalArticle.objects.create(document=document, position=1, number="1", content="نص")
+    return pipeline.Source(article, score)
+
+
+@pytest.mark.django_db
+def test_detect_category_weights_by_score():
+    famille = Category.objects.create(slug="famille", name_fr="Famille")
+    penal = Category.objects.create(slug="penal", name_fr="Pénal")
+    sources = [make_source(penal, 0.9), make_source(famille, 0.6), make_source(famille, 0.6)]
+    assert pipeline.detect_category(sources) == famille  # 1.2 contre 0.9
+
+
+@pytest.mark.django_db
+def test_detect_category_none_when_too_scattered():
+    sources = [make_source(Category.objects.create(slug=f"c{i}", name_fr=f"C{i}"), 0.8) for i in range(4)]
+    assert pipeline.detect_category(sources) is None  # 25 % chacune < 40 %
+
+
+@pytest.mark.django_db
+def test_detect_category_without_sources_or_categories():
+    assert pipeline.detect_category([]) is None
+    assert pipeline.detect_category([make_source(None, 0.9)]) is None
+
+
+def test_chat_saves_category_on_both_messages(auth_api, fake_rag):
+    response = auth_api.post("/api/chat/", {"message": "Mon employeur ne me paie pas"})
+    assert response.data["answer"]["category"]["slug"] == "travail"
+    assert response.data["question"]["category"]["name_ar"] == "الشغل"
+    conversation = Conversation.objects.get(id=response.data["conversation_id"])
+    assert {m.category.slug for m in conversation.messages.all()} == {"travail"}
+
+    detail = auth_api.get(f"/api/conversations/{conversation.id}/")
+    assert detail.data["messages"][1]["category"]["slug"] == "travail"
+
+
+@pytest.mark.django_db
+def test_load_categories_from_json(tmp_path):
+    from legal.categories import load_categories
+
+    LegalDocument.objects.create(title="مدونة الشغل", source_file="مدونة الشغل.txt")
+    LegalDocument.objects.create(title="hors liste", source_file="autre.txt")
+    path = tmp_path / "categories.json"
+    path.write_text(json.dumps({
+        "categories": [{"slug": "travail", "name_fr": "Travail", "name_ar": "الشغل"}],
+        "laws": {"travail": ["مدونة الشغل.txt", "pas encore importé.txt"]},
+    }, ensure_ascii=False), encoding="utf-8")
+
+    assert load_categories(path) == (1, 1)
+    assert load_categories(path) == (1, 1)  # relançable sans doublon
+    assert LegalDocument.objects.get(source_file="مدونة الشغل.txt").category.slug == "travail"
+    assert LegalDocument.objects.get(source_file="autre.txt").category is None

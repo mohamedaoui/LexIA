@@ -4,6 +4,7 @@ from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from legal.categories import CATEGORIES_FILE, load_categories
 from legal.models import LegalArticle, LegalDocument
 from legal.parsing import split_articles
 
@@ -48,3 +49,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING(
                 f"{len(skipped)} fichiers sans article détecté : " + ", ".join(skipped)
             ))
+
+        if CATEGORIES_FILE.exists():
+            categories, classified = load_categories()
+            self.stdout.write(f"{categories} catégories, {classified} textes classés.")

@@ -53,7 +53,7 @@ function Feedback({ message }: { message: DisplayMessage }) {
 }
 
 export function MessageBubble({ message }: { message: DisplayMessage }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   if (message.role === "user") {
     return (
@@ -72,6 +72,17 @@ export function MessageBubble({ message }: { message: DisplayMessage }) {
         L
       </div>
       <div className="min-w-0 flex-1">
+        {message.category && (
+          <div className="mb-2">
+            <span
+              title={t.category}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-100 bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700"
+            >
+              <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+              {lang === "ar" ? message.category.name_ar : message.category.name_fr}
+            </span>
+          </div>
+        )}
         {waiting ? (
           <div className="flex items-center gap-2 py-2 text-sm text-slate-500">
             <span className="flex gap-1">

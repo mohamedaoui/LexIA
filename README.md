@@ -56,7 +56,8 @@ Conception : [docs/conception.md](docs/conception.md).
 - ✅ S2-S3 Backend Django + DRF, auth JWT, admin, Docker Compose, CI GitHub Actions
 - ✅ S4 Pipeline RAG (embeddings locaux + ChromaDB + Gemini), réponses en streaming
 - ✅ Frontend React : connexion, chat, sources, feedback, interface FR / AR (RTL)
-- ⏳ S5-S6 Catégories automatiques, dashboard admin, export CSV
+- ✅ S5 Classement automatique des questions en 17 domaines juridiques
+- ⏳ S6 Dashboard admin, statistiques, export CSV
 - ⏳ S7-S8 Tests de charge, audit sécurité, déploiement, rapport
 
 ## Crédits

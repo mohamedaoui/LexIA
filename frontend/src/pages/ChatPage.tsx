@@ -13,6 +13,7 @@ function localMessage(role: "user" | "assistant", content: string, extra: Partia
     role,
     content,
     sources: [],
+    category: null,
     feedback: null,
     created_at: new Date().toISOString(),
     local: true,
@@ -74,6 +75,7 @@ export function ChatPage() {
         conversationId ?? null,
         {
           onSources: (sources) => updateLast((m) => ({ ...m, sources })),
+          onCategory: (category) => updateLast((m) => ({ ...m, category })),
           onToken: (token) => updateLast((m) => ({ ...m, content: m.content + token })),
           onDone: ({ conversation_id, question, answer }) => {
             setMessages((list) => [...list.slice(0, -2), question, answer]);

@@ -24,7 +24,7 @@ pip install -r requirements.txt
 copy .env.example .env      # puis remplir DJANGO_SECRET_KEY et GEMINI_API_KEY
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py import_laws      # importe data/PDF_text dans la base (~1 min)
+python manage.py import_laws      # importe data/PDF_text + catégories de data/categories.json (~1 min)
 python manage.py index_articles   # embeddings dans ChromaDB (~1 h 30 sur CPU, reprend si interrompu)
 python manage.py runserver
 ```
@@ -82,7 +82,24 @@ historique + articles + prompt système ──► Gemini ──► réponse + av
 - **Traçabilité** : chaque réponse enregistre les articles utilisés et leur score
   (`MessageSource`), renvoyés au frontend dans `sources`.
 
+## Catégories juridiques
+
+- `data/categories.json` définit 17 domaines (famille, travail, pénal, immobilier...) et
+  classe chacune des 247 lois dans l'un d'eux. Après une modification du fichier :
+  `python manage.py load_categories`.
+- **Catégorie d'une question** : calculée à partir des articles trouvés par la recherche.
+  Chaque article apporte son score de pertinence à la catégorie de sa loi ; la catégorie
+  qui pèse le plus est retenue si elle représente au moins 40 % du total (sinon : aucune,
+  par exemple pour « Bonjour »). Aucun appel supplémentaire au LLM.
+- La catégorie est enregistrée sur la question et la réponse (`Message.category`), envoyée
+  au frontend (événement `category` du streaming) et servira aux statistiques du dashboard.
+
 ## Limites connues
+
+- `runserver` ne relit pas `.env` lors d'un rechargement automatique, et le rechargement
+  peut rater une modification : en cas de comportement inattendu, redémarrer le serveur.
+- 3 fichiers du corpus utilisent des « formes de présentation » arabes (ex. `ﺍﻟﺼﻴﻐﺔ`) :
+  à normaliser (Unicode NFKC) lors d'un prochain import.
 
 - `import_laws` ne découpe pas 36 fichiers sur 247 : PDF scannés (OCR nécessaire) ou
   articles numérotés en lettres (« الفصل الأول », « الفصل الثاني »...).

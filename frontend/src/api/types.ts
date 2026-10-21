@@ -11,6 +11,14 @@ export interface User {
   is_staff: boolean;
 }
 
+export interface Category {
+  id: number;
+  slug: string;
+  name_fr: string;
+  name_ar: string;
+  description: string;
+}
+
 export interface Source {
   article_id: number;
   number: string;
@@ -29,6 +37,7 @@ export interface Message {
   role: "user" | "assistant";
   content: string;
   sources: Source[];
+  category: Category | null;
   feedback: Feedback | null;
   created_at: string;
 }

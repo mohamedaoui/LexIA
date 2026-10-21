@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from legal.serializers import CategorySerializer
+
 from .models import Conversation, Feedback, Message, MessageSource
 
 
@@ -23,6 +25,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
 class MessageSerializer(serializers.ModelSerializer):
     sources = MessageSourceSerializer(source="messagesource_set", many=True, read_only=True)
     feedback = FeedbackSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
 
     class Meta:
         model = Message
