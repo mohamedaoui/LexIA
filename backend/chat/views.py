@@ -1,11 +1,28 @@
+import logging
+
+from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
 from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from rag import pipeline
 
 from .models import Conversation, Feedback, Message, MessageSource
-from .serializers import ConversationDetailSerializer, ConversationSerializer, FeedbackSerializer
+from .serializers import (
+    ChatRequestSerializer,
+    ChatResponseSerializer,
+    ConversationDetailSerializer,
+    ConversationSerializer,
+    FeedbackSerializer,
+    MessageSerializer,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
@@ -56,4 +73,55 @@ class MessageViewSet(viewsets.GenericViewSet):
         return Response(
             FeedbackSerializer(feedback).data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class ChatView(APIView):
+    """Pose une question à LexIA. Sans `conversation_id`, une nouvelle conversation est créée."""
+
+    @extend_schema(request=ChatRequestSerializer, responses={201: ChatResponseSerializer})
+    def post(self, request):
+        serializer = ChatRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        question = serializer.validated_data["message"]
+
+        conversation = None
+        history = []
+        if conversation_id := serializer.validated_data.get("conversation_id"):
+            conversation = get_object_or_404(Conversation, id=conversation_id, user=request.user)
+            history = list(conversation.messages.values_list("role", "content"))
+
+        try:
+            result = pipeline.answer(question, history)
+        except ImproperlyConfigured as error:
+            logger.error("RAG non configuré : %s", error)
+            return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        except Exception:
+            logger.exception("Échec du pipeline RAG")
+            return Response(
+                {"detail": "Le service de réponse est momentanément indisponible. Réessayez."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        # Question et réponse sont enregistrées ensemble : pas de question orpheline en cas d'erreur.
+        with transaction.atomic():
+            if conversation is None:
+                conversation = Conversation.objects.create(
+                    user=request.user, title=question[:80], language=result.language
+                )
+            user_message = conversation.messages.create(role=Message.Role.USER, content=question)
+            answer = conversation.messages.create(role=Message.Role.ASSISTANT, content=result.content)
+            MessageSource.objects.bulk_create(
+                MessageSource(message=answer, article=s.article, score=s.score) for s in result.sources
+            )
+            conversation.save(update_fields=["updated_at"])
+
+        answer = Message.objects.prefetch_related("messagesource_set__article__document").get(pk=answer.pk)
+        return Response(
+            {
+                "conversation_id": conversation.id,
+                "question": MessageSerializer(user_message).data,
+                "answer": MessageSerializer(answer).data,
+            },
+            status=status.HTTP_201_CREATED,
         )

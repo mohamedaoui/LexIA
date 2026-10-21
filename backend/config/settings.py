@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "accounts",
     "legal",
     "chat",
+    "rag",
 ]
 
 MIDDLEWARE = [
@@ -129,6 +130,16 @@ SPECTACULAR_SETTINGS = {
         "MessageRoleEnum": "chat.models.Message.Role",
     },
 }
+
+# --- RAG ---------------------------------------------------------------------
+
+CHROMA_DIR = BASE_DIR / "chroma_db"
+RAG_EMBEDDING_MODEL = os.environ.get("RAG_EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
+RAG_TOP_K = int(os.environ.get("RAG_TOP_K", "6"))
+RAG_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.0"))
+RAG_HISTORY_MESSAGES = 10
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://localhost:3000"

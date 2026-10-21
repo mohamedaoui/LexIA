@@ -1,0 +1,157 @@
+from types import SimpleNamespace
+
+import pytest
+from django.core.exceptions import ImproperlyConfigured
+from langchain_core.documents import Document
+from langchain_core.messages import AIMessage
+
+from chat.models import Conversation, Message, MessageSource
+from conftest import ConversationFactory
+from legal.models import LegalArticle, LegalDocument
+from rag import pipeline
+from rag.chunking import split_for_embedding
+from rag.prompts import DISCLAIMERS, detect_language
+
+
+class FakeStore:
+    def __init__(self, hits):
+        self.hits = hits
+        self.queries = []
+
+    def similarity_search_with_relevance_scores(self, query, k):
+        self.queries.append(query)
+        return self.hits[:k]
+
+
+class FakeLLM:
+    def __init__(self, reply="**Loi applicable** : [Code — Article 1]"):
+        self.reply = reply
+        self.calls = []
+
+    def invoke(self, messages):
+        self.calls.append(messages)
+        return AIMessage(self.reply)
+
+
+@pytest.fixture
+def articles(db):
+    document = LegalDocument.objects.create(title="مدونة الشغل", source_file="travail.txt")
+    return [
+        LegalArticle.objects.create(document=document, position=i, number=str(i), content=f"نص المادة {i}")
+        for i in (1, 2, 3)
+    ]
+
+
+@pytest.fixture
+def fake_rag(monkeypatch, articles):
+    store = FakeStore([
+        (Document("a", metadata={"article_id": articles[1].id}), 0.91),
+        (Document("b", metadata={"article_id": articles[1].id}), 0.80),  # 2e morceau du même article
+        (Document("c", metadata={"article_id": articles[0].id}), 0.75),
+    ])
+    llm = FakeLLM()
+    monkeypatch.setattr(pipeline, "get_vectorstore", lambda: store)
+    monkeypatch.setattr(pipeline, "get_llm", lambda: llm)
+    return SimpleNamespace(store=store, llm=llm, articles=articles)
+
+
+# --- Découpage et langue -------------------------------------------------------
+
+def test_short_text_is_one_chunk():
+    assert split_for_embedding("  نص   قصير ") == ["نص قصير"]
+
+
+def test_long_text_is_split_with_overlap():
+    words = [f"mot{i}" for i in range(600)]
+    chunks = split_for_embedding(" ".join(words), max_chars=500, overlap=100)
+    assert len(chunks) > 1
+    assert all(len(c) <= 500 for c in chunks)
+    assert chunks[0].split()[-1] in chunks[1]  # chevauchement
+    assert set(" ".join(chunks).split()) == set(words)  # rien de perdu
+
+
+@pytest.mark.parametrize("text, expected", [
+    ("Mon employeur ne me paie pas", "fr"),
+    ("مشغلي لم يدفع لي الأجر", "ar"),
+    ("واش عندي الحق نطالب بالتعويض؟", "ar"),
+    ("123 ?", "fr"),
+])
+def test_detect_language(text, expected):
+    assert detect_language(text) == expected
+
+
+# --- Pipeline ------------------------------------------------------------------
+
+def test_retrieve_keeps_best_score_per_article(fake_rag, settings):
+    settings.RAG_MIN_SCORE = 0.0
+    sources = pipeline.retrieve("question", k=6)
+    assert [s.article.number for s in sources] == ["2", "1"]
+    assert sources[0].score == 0.91
+
+
+def test_retrieve_drops_low_scores(fake_rag, settings):
+    settings.RAG_MIN_SCORE = 0.8
+    assert [s.article.number for s in pipeline.retrieve("question", k=6)] == ["2"]
+
+
+def test_answer_adds_disclaimer_and_context(fake_rag):
+    result = pipeline.answer("Quel est le délai de préavis ?")
+    assert result.content.endswith(DISCLAIMERS["fr"])
+    assert result.language == "fr"
+    prompt = fake_rag.llm.calls[0][-1].content
+    assert "[مدونة الشغل — Article 2]" in prompt
+    assert "Quel est le délai de préavis ?" in prompt
+
+
+def test_answer_in_arabic_gets_arabic_disclaimer(fake_rag):
+    assert pipeline.answer("ما هي مدة الإشعار؟").content.endswith(DISCLAIMERS["ar"])
+
+
+def test_follow_up_uses_previous_question_for_search(fake_rag):
+    history = [("user", "Licenciement abusif"), ("assistant", "Pouvez-vous préciser ?")]
+    pipeline.answer("Et l'indemnité ?", history)
+    assert fake_rag.store.queries[-1] == "Licenciement abusif Et l'indemnité ?"
+    assert len(fake_rag.llm.calls[0]) == 4  # système + 2 messages d'historique + question
+
+
+# --- Endpoint /api/chat/ -------------------------------------------------------
+
+def test_chat_creates_conversation_with_sources(auth_api, user, fake_rag):
+    response = auth_api.post("/api/chat/", {"message": "Mon employeur ne me paie pas"})
+    assert response.status_code == 201
+
+    conversation = Conversation.objects.get(id=response.data["conversation_id"])
+    assert conversation.user == user
+    assert conversation.title == "Mon employeur ne me paie pas"
+    assert [m.role for m in conversation.messages.all()] == ["user", "assistant"]
+    assert response.data["answer"]["sources"][0]["number"] == "2"
+    assert MessageSource.objects.count() == 2
+
+
+def test_chat_continues_existing_conversation(auth_api, user, fake_rag):
+    conversation = ConversationFactory(user=user)
+    conversation.messages.create(role=Message.Role.USER, content="Licenciement")
+    response = auth_api.post("/api/chat/", {"message": "Et ensuite ?", "conversation_id": str(conversation.id)})
+    assert response.status_code == 201
+    assert conversation.messages.count() == 3
+
+
+def test_chat_refuses_other_users_conversation(auth_api, fake_rag):
+    other = ConversationFactory()
+    response = auth_api.post("/api/chat/", {"message": "Bonjour", "conversation_id": str(other.id)})
+    assert response.status_code == 404
+    assert not fake_rag.llm.calls
+
+
+def test_chat_requires_authentication(api):
+    assert api.post("/api/chat/", {"message": "Bonjour"}).status_code == 401
+
+
+def test_chat_without_api_key_returns_503_and_saves_nothing(auth_api, monkeypatch):
+    def not_configured(*args):
+        raise ImproperlyConfigured("GEMINI_API_KEY n'est pas défini")
+
+    monkeypatch.setattr(pipeline, "answer", not_configured)
+    response = auth_api.post("/api/chat/", {"message": "Bonjour"})
+    assert response.status_code == 503
+    assert not Conversation.objects.exists()

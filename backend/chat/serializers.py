@@ -29,6 +29,17 @@ class MessageSerializer(serializers.ModelSerializer):
         fields = ["id", "role", "content", "category", "sources", "feedback", "created_at"]
 
 
+class ChatRequestSerializer(serializers.Serializer):
+    message = serializers.CharField(max_length=4000, trim_whitespace=True)
+    conversation_id = serializers.UUIDField(required=False)
+
+
+class ChatResponseSerializer(serializers.Serializer):
+    conversation_id = serializers.UUIDField()
+    question = MessageSerializer()
+    answer = MessageSerializer()
+
+
 class ConversationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Conversation
