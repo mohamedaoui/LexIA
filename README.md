@@ -10,39 +10,31 @@ du projet est dans [docs/LexIA_Plan_Projet_v1.1.pdf](docs/LexIA_Plan_Projet_v1.1
 
 ```
 .
-├── frontend/   # Application web (Next.js + TypeScript + Tailwind) : pages, chat, auth
-├── backend/    # Pipeline IA en Python : extraction, découpage par article, embeddings, base vectorielle
-├── data/       # Corpus juridique : 247 lois marocaines converties en texte (data/PDF_text)
-└── docs/       # Documentation du projet (plan, cahier des charges, ...)
+├── backend/             # API Django 5 + DRF (auth JWT, conversations, base juridique) — voir backend/README.md
+├── frontend/            # Interface web (actuellement Next.js, migration vers React prévue)
+├── data/                # Corpus juridique : 247 lois marocaines en texte (data/PDF_text)
+├── docs/                # Plan du projet, conception (architecture, ERD, API)
+└── docker-compose.yml   # PostgreSQL + backend
 ```
+
+### Démarrage rapide du backend
+
+```powershell
+cd backend
+py -3.12 -m venv .venv; .venv\Scriptsctivate
+pip install -r requirements.txt
+copy .env.example .env
+python manage.py migrate
+python manage.py import_laws
+python manage.py runserver
+```
+
+Documentation de l'API : http://localhost:8000/api/docs/ — Conception : [docs/conception.md](docs/conception.md).
 
 ### data/
 - `PDF_text/` : textes de loi en arabe, extraits des PDF publiés par le CSPJ
   (https://cspj.ma/bibliotheque/legislations).
-- `PDFs/` (non versionné) : PDF bruts, re-téléchargeables avec `backend/download_data.py`.
-
-### backend/
-| Fichier | Rôle |
-|---|---|
-| `download_data.py` | Télécharge les PDF des lois dans `data/PDFs` |
-| `extract.py` | PDF → texte (`pdftotext`), nettoyage, découpage par article |
-| `main.py` | Indexation : traduction, embeddings, envoi dans la base vectorielle |
-| `model.py` | Client du modèle (embeddings + génération) |
-| `database.py` | Accès à la base vectorielle |
-| `test_extract.py` | Tests du découpage en articles |
-
-Installation : `cd backend && uv sync`, puis copier `.env.example` en `.env`.
-
-### frontend/
-Application Next.js (authentification JWT, sessions de chat, historique, affichage RTL arabe).
-
-```
-cd frontend
-npm install
-npx prisma migrate dev
-npm run dev
-```
-Variables d'environnement (`frontend/.env`) : `DATABASE_URL`, `JWT_SECRET`, `GEMINI_API_KEY`, `PINECONE_API_KEY`.
+- `PDFs/` (non versionné) : PDF bruts, re-téléchargeables avec `backend/ingestion/download_data.py`.
 
 ## Feuille de route
 Selon le plan v1.1 : migration du backend vers **Django 5 + DRF**, pipeline RAG avec

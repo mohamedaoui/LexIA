@@ -5,7 +5,7 @@ import subprocess
 
 CHUCK_SIZE = 3000
 CHUNK_OVERLAP = 100
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "data")
 FOLDER_PATH = os.path.join(DATA_DIR, "PDFs")
 OUTPUT_FOLDER = os.path.join(DATA_DIR, "PDF_text")
 
