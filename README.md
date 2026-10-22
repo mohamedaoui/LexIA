@@ -15,10 +15,20 @@ du projet est dans [docs/LexIA_Plan_Projet_v1.1.pdf](docs/LexIA_Plan_Projet_v1.1
 ├── data/                # Corpus juridique : 247 lois marocaines en texte (data/PDF_text)
 ├── docs/                # Plan du projet, conception (architecture, ERD, API)
 ├── legacy/              # Ancienne interface Next.js du projet de départ (référence)
-└── docker-compose.yml   # PostgreSQL + backend
+├── scripts/             # smoke_test.sh : vérification d'un déploiement
+└── docker-compose.yml   # Déploiement : PostgreSQL + backend (gunicorn) + frontend (nginx)
 ```
 
-## Démarrage rapide
+## Déploiement (Docker)
+
+```bash
+cp .env.example .env      # remplir DJANGO_SECRET_KEY, POSTGRES_PASSWORD, GEMINI_API_KEY
+docker compose up -d --build
+```
+
+Application sur http://localhost:8080 — guide complet : [docs/deploiement.md](docs/deploiement.md).
+
+## Démarrage rapide (développement)
 
 **1. Backend** (premier terminal) :
 
@@ -58,7 +68,9 @@ Conception : [docs/conception.md](docs/conception.md).
 - ✅ Frontend React : connexion, chat, sources, feedback, interface FR / AR (RTL)
 - ✅ S5 Classement automatique des questions en 17 domaines juridiques
 - ✅ S6 Dashboard administrateur : statistiques, avis, exports CSV
-- ⏳ S7-S8 Tests de charge, audit sécurité, déploiement, rapport
+- ✅ S7 Audit de sécurité, tests de sécurité et de charge — [docs/securite.md](docs/securite.md)
+- ✅ S8 Déploiement Docker (PostgreSQL + gunicorn + nginx), vérifié en CI — [docs/deploiement.md](docs/deploiement.md)
+- ⏳ Rapport final et slides
 
 ## Crédits
 Le code de départ est basé sur le projet open source

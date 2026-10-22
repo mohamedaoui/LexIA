@@ -32,10 +32,11 @@ let refreshing: Promise<string> | null = null;
 /** Renouvelle le jeton d'accès avec le jeton de rafraîchissement (une seule requête à la fois). */
 export async function refreshAccessToken(): Promise<string> {
   if (!tokens.refresh) throw new Error("Pas de session");
+  // Le serveur renvoie aussi un nouveau jeton de rafraîchissement (l'ancien est révoqué).
   refreshing ??= axios
-    .post<{ access: string }>("/api/auth/refresh/", { refresh: tokens.refresh })
+    .post<{ access: string; refresh?: string }>("/api/auth/refresh/", { refresh: tokens.refresh })
     .then(({ data }) => {
-      tokens.set(data.access);
+      tokens.set(data.access, data.refresh);
       return data.access;
     })
     .finally(() => {

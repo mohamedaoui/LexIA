@@ -52,3 +52,10 @@ def get_llm():
 
     # Si le modèle principal échoue (quota atteint, surcharge), les suivants prennent le relais.
     return model(settings.GEMINI_MODEL).with_fallbacks([model(name) for name in settings.GEMINI_FALLBACK_MODELS])
+
+
+def warm_up():
+    """Charge le modèle d'embeddings et ChromaDB (~1 à 2 min sur CPU) pour que la première
+    question ne paie pas ce temps. Appelé au démarrage du serveur, dans un thread."""
+    get_vectorstore()
+    get_embeddings().embed_query("préchargement")

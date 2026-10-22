@@ -207,12 +207,15 @@ def test_stream_error_saves_nothing(auth_api, monkeypatch, fake_rag):
     assert not Conversation.objects.exists()
 
 
-def test_stream_without_api_key_returns_503(auth_api, monkeypatch, settings):
+@pytest.mark.parametrize("debug", [True, False])
+def test_stream_without_api_key_returns_503(auth_api, settings, debug):
     settings.GEMINI_API_KEY = ""
+    settings.DEBUG = debug
     pipeline.get_llm.cache_clear()
     response = auth_api.post("/api/chat/stream/", {"message": "Bonjour"})
     assert response.status_code == 503
-    assert "GEMINI_API_KEY" in response.data["detail"]
+    # Le détail de configuration n'est montré qu'en développement.
+    assert ("GEMINI_API_KEY" in response.data["detail"]) is debug
 
 
 class QuotaLLM(FakeLLM):
@@ -317,3 +320,23 @@ def test_classify_messages_backfills_old_exchanges(user):
     question.refresh_from_db(); answer.refresh_from_db(); unrelated.refresh_from_db()
     assert question.category == travail and answer.category == travail
     assert unrelated.category is None
+
+
+@pytest.mark.django_db
+def test_huge_article_sends_only_the_matched_passage():
+    document = LegalDocument.objects.create(title="مجموعة القانون الجنائي", source_file="penal.txt")
+    huge = LegalArticle.objects.create(document=document, position=1, number="1", content="نص " * 100_000)
+    small = LegalArticle.objects.create(document=document, position=2, number="2", content="المادة 2 قصيرة")
+
+    context = pipeline.format_context([
+        pipeline.Source(huge, 0.9, excerpt="الفقرة التي وجدها البحث"),
+        pipeline.Source(small, 0.8, excerpt="قصيرة"),
+    ])
+    assert "الفقرة التي وجدها البحث" in context
+    assert "المادة 2 قصيرة" in context  # un article court est envoyé en entier
+    assert len(context) < 1_000
+
+
+def test_retrieve_keeps_matched_excerpt(fake_rag, settings):
+    settings.RAG_MIN_SCORE = 0.0
+    assert pipeline.retrieve("question")[0].excerpt == "a"

@@ -31,6 +31,16 @@ def local(dt) -> str:
     return timezone.localtime(dt).strftime("%Y-%m-%d %H:%M")
 
 
+# Une cellule qui commence par l'un de ces caractères est exécutée comme une formule par
+# Excel / LibreOffice : une question « =HYPERLINK(...) » deviendrait un lien piégé.
+FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r")
+
+
+def safe_cell(value) -> str:
+    text = "" if value is None else str(value)
+    return f"'{text}" if text.startswith(FORMULA_PREFIXES) else text
+
+
 def csv_response(filename: str, header: list[str], rows) -> HttpResponse:
     # Le BOM UTF-8 permet à Excel d'afficher correctement l'arabe ; ";" est le séparateur
     # attendu par Excel en français.
@@ -39,7 +49,7 @@ def csv_response(filename: str, header: list[str], rows) -> HttpResponse:
     response.write("﻿")
     writer = csv.writer(response, delimiter=";")
     writer.writerow(header)
-    writer.writerows(rows)
+    writer.writerows([safe_cell(cell) for cell in row] for row in rows)
     return response
 
 

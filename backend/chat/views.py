@@ -1,6 +1,7 @@
 import json
 import logging
 
+from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.db import transaction
 from django.db.models import Prefetch
@@ -10,6 +11,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from legal.serializers import CategorySerializer
@@ -118,6 +120,10 @@ def exchange_payload(conversation, user_message, answer):
 
 
 class BaseChatView(APIView):
+    # Chaque question coûte un appel au LLM : limite par utilisateur (voir THROTTLE_CHAT).
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "chat"
+
     def parse(self, request):
         """Valide la requête ; retourne (question, conversation ou None, historique)."""
         serializer = ChatRequestSerializer(data=request.data)
@@ -139,7 +145,8 @@ class ChatView(BaseChatView):
             result = pipeline.answer(question, history)
         except ImproperlyConfigured as error:
             logger.error("RAG non configuré : %s", error)
-            return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            detail = str(error) if settings.DEBUG else UNAVAILABLE
+            return Response({"detail": detail}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception as error:
             logger.exception("Échec du pipeline RAG")
             return Response({"detail": failure_message(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
@@ -168,7 +175,8 @@ class ChatStreamView(BaseChatView):
             prepared = pipeline.prepare(question, history)
         except ImproperlyConfigured as error:
             logger.error("RAG non configuré : %s", error)
-            return Response({"detail": str(error)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+            detail = str(error) if settings.DEBUG else UNAVAILABLE
+            return Response({"detail": detail}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
         except Exception:
             logger.exception("Échec de la recherche RAG")
             return Response({"detail": UNAVAILABLE}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

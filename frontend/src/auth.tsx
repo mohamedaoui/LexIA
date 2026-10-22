@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(Boolean(tokens.access));
 
   const logout = useCallback(() => {
-    tokens.clear();
+    void authApi.logout();
     setUser(null);
   }, []);
 

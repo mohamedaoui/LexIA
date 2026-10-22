@@ -12,14 +12,10 @@ class RagConfig(AppConfig):
     verbose_name = "Pipeline RAG"
 
     def ready(self):
-        # Seulement pour le serveur web (pas pour les tests ni les autres commandes),
-        # et dans le processus enfant de runserver (celui qui sert les requêtes).
+        # Seulement pour le serveur de développement (pas pour les tests ni les autres commandes),
+        # dans le processus enfant de runserver. En production : voir gunicorn.conf.py.
         serving = "runserver" in sys.argv and os.environ.get("RUN_MAIN") == "true"
         if settings.RAG_PRELOAD and serving:
-            from .store import get_embeddings, get_vectorstore
+            from .store import warm_up
 
-            def preload():
-                get_vectorstore()
-                get_embeddings().embed_query("préchargement")
-
-            threading.Thread(target=preload, daemon=True, name="rag-preload").start()
+            threading.Thread(target=warm_up, daemon=True, name="rag-preload").start()

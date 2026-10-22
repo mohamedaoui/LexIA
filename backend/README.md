@@ -33,7 +33,7 @@ python manage.py runserver
 Sans `DATABASE_URL` dans `.env`, la base est SQLite (`db.sqlite3`). Pour PostgreSQL :
 `DATABASE_URL=postgres://utilisateur:motdepasse@localhost:5432/lexia`.
 
-Avec Docker (depuis la racine du projet) : `docker compose up --build`.
+Déploiement Docker (PostgreSQL + gunicorn + nginx) : voir [docs/deploiement.md](../docs/deploiement.md).
 
 ## Adresses utiles
 
@@ -46,9 +46,11 @@ Avec Docker (depuis la racine du projet) : `docker compose up --build`.
 
 | Méthode | URL | Accès |
 |---|---|---|
+| GET | `/api/health/` | public (surveillance) |
 | POST | `/api/auth/register/` | public |
 | POST | `/api/auth/login/` → `{access, refresh}` | public |
-| POST | `/api/auth/refresh/` | public |
+| POST | `/api/auth/refresh/` → nouveau couple `{access, refresh}` | public |
+| POST | `/api/auth/logout/` `{refresh}` (révoque le jeton) | public |
 | GET / PATCH | `/api/auth/me/` | connecté |
 | GET | `/api/categories/`, `/api/faqs/` | public (écriture : admin) |
 | GET | `/api/laws/`, `/api/articles/` | connecté |
@@ -63,8 +65,12 @@ Les requêtes authentifiées envoient l'en-tête `Authorization: Bearer <access>
 ## Tests
 
 ```powershell
-pytest --cov=accounts --cov=legal --cov=chat --cov=rag
+pytest --cov=accounts --cov=legal --cov=chat --cov=rag --cov=dashboard
+pytest security                                   # tests de sécurité
+python scripts/load_test.py --users 20 --chat 10  # test de charge (voir l'en-tête du script)
 ```
+
+Audit de sécurité et résultats des tests de charge : [docs/securite.md](../docs/securite.md).
 
 ## Pipeline RAG
 

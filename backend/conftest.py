@@ -33,6 +33,14 @@ class MessageFactory(factory.django.DjangoModelFactory):
     content = "Selon l'article 6 du Code du travail..."
 
 
+@pytest.fixture(autouse=True)
+def reset_throttles():
+    """Les compteurs de limites de requêtes vivent dans le cache : on repart de zéro à chaque test."""
+    from django.core.cache import cache
+
+    cache.clear()
+
+
 @pytest.fixture
 def user(db):
     return UserFactory()

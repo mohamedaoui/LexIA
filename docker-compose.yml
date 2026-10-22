@@ -1,32 +1,61 @@
+# Déploiement complet de LexIA : docker compose up -d --build
+# Configuration : copier .env.example en .env et le remplir (voir docs/deploiement.md).
+
 services:
   db:
-    image: postgres:16
+    image: postgres:16-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_DB: lexia
       POSTGRES_USER: lexia
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lexia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?définir POSTGRES_PASSWORD dans .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lexia -d lexia"]
       interval: 5s
-      retries: 10
+      retries: 20
 
   backend:
     build: ./backend
-    env_file: ./backend/.env
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://lexia:${POSTGRES_PASSWORD:-lexia}@db:5432/lexia
+      DATABASE_URL: postgres://lexia:${POSTGRES_PASSWORD}@db:5432/lexia
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?définir DJANGO_SECRET_KEY dans .env}
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://localhost:8080}
+      DJANGO_HTTPS: ${DJANGO_HTTPS:-False}
+      DJANGO_NUM_PROXIES: "1"
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      GEMINI_FALLBACK_MODELS: ${GEMINI_FALLBACK_MODELS:-gemini-3.1-flash-lite,gemini-3.5-flash}
+      RAG_PRELOAD: ${RAG_PRELOAD:-True}
+      THROTTLE_CHAT: ${THROTTLE_CHAT:-60/hour}
     volumes:
-      - ./backend:/app/backend
       - ./data:/app/data:ro
-    ports:
-      - "8000:8000"
+      - chroma_data:/app/chroma_db
+      - hf_cache:/app/hf-cache
     depends_on:
       db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')"]
+      interval: 10s
+      timeout: 5s
+      start_period: 120s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${LEXIA_PORT:-8080}:80"
+    depends_on:
+      backend:
         condition: service_healthy
 
 volumes:
   postgres_data:
+  chroma_data:
+  hf_cache:

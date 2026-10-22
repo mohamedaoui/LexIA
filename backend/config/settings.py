@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     # Tiers
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "drf_spectacular",
     # LexIA
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -100,6 +102,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # Fichiers de l'admin Django servis par whitenoise, compressés et versionnés.
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -115,12 +122,46 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    # Limites de requêtes : contre le vol de mot de passe par essais répétés, les inscriptions
+    # en masse et l'épuisement du quota Gemini. Compteurs par IP (anonymes) ou par compte.
+    "DEFAULT_THROTTLE_RATES": {
+        "login": os.environ.get("THROTTLE_LOGIN", "10/min"),
+        "register": os.environ.get("THROTTLE_REGISTER", "10/hour"),
+        "chat": os.environ.get("THROTTLE_CHAT", "60/hour"),
+    },
+    # Nombre de proxys de confiance devant Django (1 avec nginx) : pour retrouver l'IP réelle.
+    "NUM_PROXIES": int(os.environ.get("DJANGO_NUM_PROXIES", "0")) or None,
 }
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    # Chaque renouvellement donne un nouveau jeton de rafraîchissement et invalide l'ancien :
+    # un jeton volé ne sert qu'une fois, et la déconnexion le révoque.
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
 }
+
+# Taille maximale d'une requête (questions de 4 000 caractères maximum).
+DATA_UPLOAD_MAX_MEMORY_SIZE = 256 * 1024
+
+# --- Sécurité en production ----------------------------------------------------
+
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = "same-origin"
+X_FRAME_OPTIONS = "DENY"
+
+# À activer quand le site est servi en HTTPS (derrière un proxy qui termine le TLS).
+if os.environ.get("DJANGO_HTTPS", "False").lower() == "true":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 60 * 60 * 24 * 365
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "LexIA API",
@@ -134,7 +175,7 @@ SPECTACULAR_SETTINGS = {
 
 # --- RAG ---------------------------------------------------------------------
 
-CHROMA_DIR = BASE_DIR / "chroma_db"
+CHROMA_DIR = Path(os.environ.get("CHROMA_DIR", BASE_DIR / "chroma_db"))
 RAG_EMBEDDING_MODEL = os.environ.get("RAG_EMBEDDING_MODEL", "intfloat/multilingual-e5-base")
 RAG_TOP_K = int(os.environ.get("RAG_TOP_K", "6"))
 RAG_MIN_SCORE = float(os.environ.get("RAG_MIN_SCORE", "0.0"))

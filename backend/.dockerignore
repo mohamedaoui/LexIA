@@ -4,5 +4,7 @@ __pycache__/
 .env
 db.sqlite3
 staticfiles/
-ingestion/
 chroma_db/
+ingestion/
+.coverage
+.pytest_cache/

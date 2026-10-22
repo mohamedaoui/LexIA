@@ -1,0 +1,38 @@
+name: Déploiement Docker
+
+# Construit les images, démarre le déploiement complet (PostgreSQL + gunicorn + nginx)
+# et le vérifie de bout en bout avec scripts/smoke_test.sh.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configuration de test
+        run: |
+          cat > .env <<EOF
+          DJANGO_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+          POSTGRES_PASSWORD=$(python3 -c "import secrets; print(secrets.token_urlsafe(24))")
+          GEMINI_API_KEY=
+          RAG_PRELOAD=False
+          LEXIA_PORT=8080
+          EOF
+
+      - name: Construction et démarrage
+        run: docker compose up -d --build --wait --wait-timeout 600
+
+      - name: Vérifications de bout en bout
+        run: bash scripts/smoke_test.sh http://localhost:8080
+
+      - name: Journaux en cas d'échec
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Arrêt
+        if: always()
+        run: docker compose down -v

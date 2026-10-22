@@ -16,6 +16,8 @@ class MessageSourceSerializer(serializers.ModelSerializer):
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
+    comment = serializers.CharField(max_length=1000, required=False, allow_blank=True)
+
     class Meta:
         model = Feedback
         fields = ["rating", "comment", "created_at"]

@@ -15,6 +15,13 @@ export async function login(email: string, password: string): Promise<void> {
   tokens.set(data.access, data.refresh);
 }
 
+/** Révoque le jeton de rafraîchissement côté serveur (au mieux : on se déconnecte quand même). */
+export async function logout(): Promise<void> {
+  const refresh = tokens.refresh;
+  tokens.clear();
+  if (refresh) await api.post("/auth/logout/", { refresh }).catch(() => {});
+}
+
 export async function register(payload: RegisterData): Promise<void> {
   await api.post("/auth/register/", payload);
   await login(payload.email, payload.password);

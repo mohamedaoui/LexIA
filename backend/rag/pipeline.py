@@ -15,6 +15,13 @@ from .store import get_llm, get_vectorstore
 class Source:
     article: LegalArticle
     score: float
+    # Passage de l'article qui a été retrouvé par la recherche.
+    excerpt: str = ""
+
+
+# Au-delà, on n'envoie au LLM que le passage retrouvé : certains textes mal découpés forment un
+# seul « article » de plusieurs centaines de milliers de caractères (quota et coût explosent).
+MAX_ARTICLE_CHARS = 3000
 
 
 @dataclass
@@ -30,15 +37,15 @@ def retrieve(query: str, k: int | None = None) -> list[Source]:
     k = k or settings.RAG_TOP_K
     hits = get_vectorstore().similarity_search_with_relevance_scores(query, k=k * 3)
 
-    best: dict[int, float] = {}
+    best: dict[int, tuple[float, str]] = {}
     for doc, score in hits:
         article_id = doc.metadata["article_id"]
-        if score >= settings.RAG_MIN_SCORE and score > best.get(article_id, -1):
-            best[article_id] = score
+        if score >= settings.RAG_MIN_SCORE and score > best.get(article_id, (-1, ""))[0]:
+            best[article_id] = (score, doc.page_content)
 
-    top = sorted(best.items(), key=lambda item: item[1], reverse=True)[:k]
+    top = sorted(best.items(), key=lambda item: item[1][0], reverse=True)[:k]
     articles = LegalArticle.objects.select_related("document__category").in_bulk([a for a, _ in top])
-    return [Source(articles[a], round(s, 4)) for a, s in top if a in articles]
+    return [Source(articles[a], round(s, 4), excerpt) for a, (s, excerpt) in top if a in articles]
 
 
 # Part minimale du score total pour qu'une catégorie soit retenue (sinon : question hors domaine
@@ -67,10 +74,16 @@ def format_context(sources: list[Source]) -> str:
     if not sources:
         return NO_CONTEXT
     return "\n\n".join(
-        f"[{s.article.document.title} — Article {s.article.number or s.article.position}]\n"
-        f"{s.article.content}"
+        f"[{s.article.document.title} — Article {s.article.number or s.article.position}]\n{context_text(s)}"
         for s in sources
     )
+
+
+def context_text(source: Source) -> str:
+    content = source.article.content
+    if len(content) <= MAX_ARTICLE_CHARS:
+        return content
+    return f"[…] {source.excerpt or content[:MAX_ARTICLE_CHARS]} […]"
 
 
 @dataclass
