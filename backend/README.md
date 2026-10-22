@@ -59,6 +59,8 @@ Déploiement Docker (PostgreSQL + gunicorn + nginx) : voir [docs/deploiement.md]
 | POST | `/api/messages/{id}/feedback/` | connecté, réponses de ses conversations |
 | GET | `/api/dashboard/stats/?days=7\|30\|90\|all` | administrateur |
 | GET | `/api/dashboard/export/questions.csv`, `/api/dashboard/export/feedback.csv` | administrateur |
+| GET / PATCH / DELETE | `/api/dashboard/users/` (filtres `q`, `role`, `is_active`, `is_staff`) | administrateur |
+| CRUD | `/api/categories/`, `/api/faqs/` | lecture publique, écriture administrateur |
 
 Les requêtes authentifiées envoient l'en-tête `Authorization: Bearer <access>`.
 
@@ -113,6 +115,14 @@ barre latérale, ou http://localhost:5173/dashboard.
 - Questions par jour, par domaine juridique (avec satisfaction par domaine), par langue,
   profils des inscrits, textes de loi les plus cités, derniers avis négatifs.
 - Filtre de période (7, 30, 90 jours, tout) appliqué à toute la page et aux exports.
+- Onglets de gestion (critère CR6) :
+  - **Utilisateurs** : recherche, filtres, profil, activation, droits d'administrateur,
+    suppression. Un admin ne peut ni se retirer ses droits, ni se désactiver, ni modifier
+    un superutilisateur s'il n'en est pas un.
+  - **Catégories** : création, modification, suppression, avec le nombre de lois, de FAQ
+    et de questions rattachées.
+  - **FAQ** : questions fréquentes en français ou en arabe, publiées ou en brouillon ; les
+    questions publiées remplacent les exemples sur l'écran d'accueil du chat.
 - Exports CSV (séparateur `;`, UTF-8 avec BOM : s'ouvrent directement dans Excel, arabe
   compris). Les utilisateurs y sont identifiés par leur numéro, sans email.
 - Après une modification de `data/categories.json` : `python manage.py load_categories` puis

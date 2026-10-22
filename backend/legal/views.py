@@ -1,9 +1,9 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import permissions, viewsets
 
 from .models import FAQ, Category, LegalArticle, LegalDocument
 from .serializers import (
-    CategorySerializer,
+    CategoryWithStatsSerializer,
     FAQSerializer,
     LegalArticleSerializer,
     LegalDocumentSerializer,
@@ -20,9 +20,14 @@ class IsAdminOrReadOnly(permissions.BasePermission):
 
 
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
+    queryset = Category.objects.annotate(
+        law_count=Count("documents", distinct=True),
+        faq_count=Count("faqs", distinct=True),
+        question_count=Count("messages", filter=Q(messages__role="user"), distinct=True),
+    )
+    serializer_class = CategoryWithStatsSerializer
     permission_classes = [IsAdminOrReadOnly]
+    pagination_class = None  # quelques dizaines de catégories au plus
 
 
 class FAQViewSet(viewsets.ModelViewSet):
@@ -30,7 +35,7 @@ class FAQViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminOrReadOnly]
 
     def get_queryset(self):
-        qs = FAQ.objects.all()
+        qs = FAQ.objects.select_related("category").order_by("category__name_fr", "id")
         if not self.request.user.is_staff:
             qs = qs.filter(is_published=True)
         for field in ("category", "language"):

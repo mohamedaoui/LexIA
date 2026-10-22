@@ -48,4 +48,6 @@ src/
   automatiquement la direction de sa langue (`dir="auto"`).
 - Questions suggérées sur l'écran d'accueil, affichage mobile avec menu latéral.
 - **Tableau de bord administrateur** (`/dashboard`, comptes `is_staff`) : chiffres clés,
-  graphiques avec info-bulles et vue tableau, avis négatifs, exports CSV.
+  graphiques avec info-bulles et vue tableau, avis négatifs, exports CSV, et onglets de
+  gestion des utilisateurs, catégories et FAQ (les FAQ publiées deviennent les suggestions
+  de l'écran d'accueil).

@@ -9,6 +9,7 @@ export interface User {
   role: Role;
   preferred_language: Language;
   is_staff: boolean;
+  is_superuser: boolean;
 }
 
 export interface Category {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { errorMessage } from "../api/client";
 import { downloadExport, fetchStats, type PeriodKey, type Stats } from "../api/dashboard";
 import { CategoryTable } from "../components/dashboard/CategoryTable";
@@ -11,8 +10,6 @@ import { RoleBars } from "../components/dashboard/RoleBars";
 import { StatTile } from "../components/dashboard/StatTile";
 import { TopLaws } from "../components/dashboard/TopLaws";
 import { ErrorBox } from "../components/Field";
-import { LanguageSwitch } from "../components/LanguageSwitch";
-import { Logo } from "../components/Logo";
 import { useI18n } from "../i18n";
 
 const PERIODS: PeriodKey[] = ["7", "30", "90", "all"];
@@ -53,24 +50,7 @@ export function DashboardPage() {
   const feedbackCount = totals ? totals.feedback_positive + totals.feedback_negative : 0;
 
   return (
-    <div className="min-h-full bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <Logo />
-          <div className="flex items-center gap-3">
-            <LanguageSwitch />
-            <Link to="/" className="text-sm font-medium text-brand-600 hover:underline">
-              {d.backToChat}
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-6">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{d.title}</h1>
-          <p className="text-slate-600">{d.subtitle}</p>
-        </div>
+    <div className="space-y-6">
 
         {/* Un seul rang de filtres, qui s'applique à toute la page. */}
         <div className="flex flex-wrap items-center gap-3">
@@ -163,7 +143,6 @@ export function DashboardPage() {
             </div>
           </div>
         )}
-      </main>
     </div>
   );
 }

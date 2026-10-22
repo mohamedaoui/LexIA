@@ -1,6 +1,10 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { RequireAdmin, RequireAuth } from "./auth";
 import { ChatPage } from "./pages/ChatPage";
+import { CategoriesPage } from "./pages/admin/CategoriesPage";
+import { DashboardLayout } from "./pages/admin/DashboardLayout";
+import { FaqPage } from "./pages/admin/FaqPage";
+import { UsersPage } from "./pages/admin/UsersPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
@@ -30,10 +34,15 @@ export function App() {
         path="/dashboard"
         element={
           <RequireAdmin>
-            <DashboardPage />
+            <DashboardLayout />
           </RequireAdmin>
         }
-      />
+      >
+        <Route index element={<DashboardPage />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="categories" element={<CategoriesPage />} />
+        <Route path="faq" element={<FaqPage />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { listFaqs } from "../api/admin";
 import { deleteConversation, getConversation, listConversations, streamChat } from "../api/chat";
 import type { Conversation } from "../api/types";
 import { ChatInput } from "../components/ChatInput";
@@ -22,8 +23,10 @@ function localMessage(role: "user" | "assistant", content: string, extra: Partia
 }
 
 export function ChatPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const navigate = useNavigate();
+  // Questions fréquentes publiées par les administrateurs, sinon les exemples par défaut.
+  const [faqQuestions, setFaqQuestions] = useState<string[]>([]);
   const { conversationId } = useParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -33,6 +36,12 @@ export function ChatPage() {
   // Conversation créée par le streaming en cours : déjà affichée, pas besoin de la recharger.
   const createdHere = useRef<string | null>(null);
   const bottom = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    listFaqs({ language: lang })
+      .then((page) => setFaqQuestions(page.results.filter((f) => f.is_published).slice(0, 4).map((f) => f.question)))
+      .catch(() => setFaqQuestions([]));
+  }, [lang]);
 
   const refreshList = useCallback(() => {
     listConversations().then(setConversations).catch(() => {});
@@ -142,7 +151,7 @@ export function ChatPage() {
                 <h1 className="text-3xl font-bold text-slate-900">{t.welcomeTitle}</h1>
                 <p className="mx-auto mt-3 max-w-xl text-slate-600">{t.welcomeText}</p>
                 <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                  {t.suggestions.map((s) => (
+                  {(faqQuestions.length ? faqQuestions : t.suggestions).map((s) => (
                     <button
                       key={s}
                       type="button"
