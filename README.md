@@ -1,5 +1,7 @@
 # LexIA — Assistant juridique marocain (RAG)
 
+![LexIA — Assistant juridique marocain basé sur le RAG](docs/lexia_banniere.png)
+
 Projet individuel réalisé par **Mohamed Aouijil**.
 
 LexIA est un assistant qui répond aux questions sur le droit marocain en s'appuyant sur
